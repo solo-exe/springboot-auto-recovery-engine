@@ -1,0 +1,8 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://postgres:5432/are_db
+  rabbitmq:
+    host: rabbitmq
+
+account-service:
+  url: http://account-service:8082

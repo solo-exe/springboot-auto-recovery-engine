@@ -1,0 +1,30 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      default-filters:
+        - name: CircuitBreaker
+          args:
+            name: defaultCB
+            fallbackUri: forward:/fallback
+
+jwt:
+  secret: auto-recovery-engine-secret-key-for-jwt-token-signing-256bit
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus,info,circuitbreakers,env,shutdown
+  endpoint:
+    health:
+      show-details: always
+    shutdown:
+      enabled: true
+  metrics:
+    tags:
+      application: api-gateway

@@ -1,0 +1,40 @@
+# IDEs and Editors
+.idea/
+.vscode/
+*.swp
+*.iws
+*.iml
+*.ipr
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+# Build and Output
+target/
+**/target/
+build/
+**/build/
+bin/
+out/
+
+# Environment and Secrets
+.env
+.env.*
+!.env.example
+*.log
+
+# Workspace and Local
+local/
+
+# Maven
+HELP.md
+.mvn/wrapper/maven-wrapper.jar

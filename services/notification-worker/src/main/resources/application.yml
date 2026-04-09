@@ -1,0 +1,25 @@
+server:
+  port: 8085
+
+spring:
+  application:
+    name: notification-worker
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus,info,env,shutdown
+  endpoint:
+    health:
+      show-details: always
+    shutdown:
+      enabled: true
+  metrics:
+    tags:
+      application: notification-worker

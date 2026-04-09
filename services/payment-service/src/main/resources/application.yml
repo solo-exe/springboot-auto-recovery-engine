@@ -1,0 +1,51 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: payment-service
+  datasource:
+    url: jdbc:postgresql://localhost:5432/are_db
+    username: are_user
+    password: are_password
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 5000
+      leak-detection-threshold: 10000
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+
+account-service:
+  url: http://localhost:8082
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus,info,circuitbreakers,env,shutdown
+  endpoint:
+    health:
+      show-details: always
+    shutdown:
+      enabled: true
+  metrics:
+    tags:
+      application: payment-service
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      accountServiceCB:
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+        waitDurationInOpenState: 30s
+        permittedNumberOfCallsInHalfOpenState: 3
+        registerHealthIndicator: true
