@@ -17,20 +17,20 @@ public class AccountEntity extends BaseEntity {
     @JoinColumn(name = "user_id", nullable = false)
     private UserEntity user;
 
-    @Column(nullable = false, unique = true, length = 20)
+    @Column(name = "account_number", nullable = false, unique = true, length = 20)
     private String accountNumber;
 
-    @Column(nullable = false, length = 100)
+    @Column(name = "account_name", nullable = false, length = 100)
     private String accountName;
 
-    @Column(nullable = false, precision = 19, scale = 4)
-    private BigDecimal balance;
+    @Column(name = "balance", nullable = false, precision = 19, scale = 4)
+    private BigDecimal balance = BigDecimal.ZERO;
 
-    @Column(nullable = false, length = 3)
-    private String currency;
+    @Column(name = "currency", nullable = false, length = 3)
+    private String currency = "NGN";
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
+    @Column(name = "status", nullable = false, length = 20)
     private AccountStatus status;
 
     @Version

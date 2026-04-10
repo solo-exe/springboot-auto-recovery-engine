@@ -3,7 +3,7 @@ package com.are.payment.service;
 import com.are.payment.config.RabbitConfig;
 import com.are.payment.dto.PaymentRequest;
 import com.are.payment.dto.PaymentResponse;
-import com.are.common.model.Payment;
+import com.are.common.model.PaymentEntity;
 import com.are.common.model.PaymentStatus;
 import com.are.payment.repository.PaymentRepository;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
@@ -45,7 +45,7 @@ public class PaymentService {
                 request.fromAccountId(), request.toAccountId(), request.amount(), request.currency());
 
         // Create payment record
-        Payment payment = new Payment();
+        PaymentEntity payment = new PaymentEntity();
         payment.setFromAccountId(request.fromAccountId());
         payment.setToAccountId(request.toAccountId());
         payment.setAmount(request.amount());
@@ -99,7 +99,7 @@ public class PaymentService {
 
     public PaymentResponse processPaymentFallback(PaymentRequest request, Throwable t) {
         log.warn("Circuit breaker open — payment processing fallback triggered: {}", t.getMessage());
-        Payment payment = new Payment();
+        PaymentEntity payment = new PaymentEntity();
         payment.setFromAccountId(request.fromAccountId());
         payment.setToAccountId(request.toAccountId());
         payment.setAmount(request.amount());
@@ -113,7 +113,7 @@ public class PaymentService {
 
     @Transactional
     public PaymentResponse refundPayment(Long paymentId) {
-        Payment payment = paymentRepository.findById(paymentId)
+        PaymentEntity payment = paymentRepository.findById(paymentId)
                 .orElseThrow(() -> new RuntimeException("Payment not found: " + paymentId));
 
         if (payment.getStatus() != PaymentStatus.COMPLETED) {
@@ -135,7 +135,7 @@ public class PaymentService {
     }
 
     public PaymentResponse getPayment(Long id) {
-        Payment payment = paymentRepository.findById(id)
+        PaymentEntity payment = paymentRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Payment not found: " + id));
         return toResponse(payment);
     }
@@ -184,7 +184,7 @@ public class PaymentService {
                 .block();
     }
 
-    private void sendNotification(Payment payment) {
+    private void sendNotification(PaymentEntity payment) {
         try {
             Map<String, Object> event = Map.of(
                     "paymentId", payment.getId(),
@@ -205,7 +205,7 @@ public class PaymentService {
         }
     }
 
-    private PaymentResponse toResponse(Payment p) {
+    private PaymentResponse toResponse(PaymentEntity p) {
         return new PaymentResponse(
                 p.getId(),
                 p.getFromAccountId(),

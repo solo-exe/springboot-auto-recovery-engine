@@ -11,19 +11,25 @@ import lombok.EqualsAndHashCode;
 @Table(name = "users")
 public class UserEntity extends BaseEntity {
 
-    @Column(nullable = false)
+    @Column(name = "first_name", nullable = false)
     private String firstName;
 
-    @Column(nullable = false)
+    @Column(name = "last_name", nullable = false)
     private String lastName;
 
-    @Column(unique = true, nullable = false)
+    @Column(name = "email", unique = true, nullable = false)
     private String email;
 
-    @Column(length = 20)
+    @Column(name = "phone_number", length = 20, nullable = true)
     private String phoneNumber;
 
+    @Column(name = "status", length = 20, nullable = false)
+    private UserStatus status = UserStatus.INACTIVE;
+
+    @Column(name = "password", nullable = true)
+    private String password;
+
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(name = "user_type", nullable = false)
     private UserType type = UserType.CUSTOMER;
 }

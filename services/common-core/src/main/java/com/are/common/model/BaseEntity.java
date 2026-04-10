@@ -15,16 +15,17 @@ public abstract class BaseEntity {
     private Long id;
 
     @CreationTimestamp
-    @Column(nullable = false, updatable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     @UpdateTimestamp
-    @Column(nullable = false)
+    @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
-    @Column(nullable = false)
+    @Column(name = "deleted", nullable = false)
     private Boolean deleted = false;
 
+    @Column(name = "deleted_at", nullable = false)
     private LocalDateTime deletedAt;
 
     // Soft delete helper methods

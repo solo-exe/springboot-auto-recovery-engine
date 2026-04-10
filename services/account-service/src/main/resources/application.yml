@@ -1,33 +1,38 @@
 server:
-  port: 8082
+    port: 8082
 
 spring:
-  application:
-    name: account-service
-  datasource:
-    url: jdbc:postgresql://localhost:5432/are_db
-    username: are_user
-    password: are_password
-    hikari:
-      maximum-pool-size: 10
-      minimum-idle: 2
-      connection-timeout: 5000
-      leak-detection-threshold: 10000
-  jpa:
-    hibernate:
-      ddl-auto: none
-    show-sql: false
+    application:
+        name: account-service
+    datasource:
+        url: jdbc:postgresql://localhost:5432/are_db
+        username: are_user
+        password: are_password
+        hikari:
+            maximum-pool-size: 10
+            minimum-idle: 2
+            connection-timeout: 5000
+            leak-detection-threshold: 10000
+    jpa:
+        hibernate:
+            ddl-auto: none
+        show-sql: false
+    rabbitmq:
+        host: localhost
+        port: 5672
+        username: guest
+        password: guest
 
 management:
-  endpoints:
-    web:
-      exposure:
-        include: health,prometheus,info,circuitbreakers,env,shutdown
-  endpoint:
-    health:
-      show-details: always
-    shutdown:
-      enabled: true
-  metrics:
-    tags:
-      application: account-service
+    endpoints:
+        web:
+            exposure:
+                include: health,prometheus,info,circuitbreakers,env,shutdown
+    endpoint:
+        health:
+            show-details: always
+        shutdown:
+            access: UNRESTRICTED
+    metrics:
+        tags:
+            application: account-service

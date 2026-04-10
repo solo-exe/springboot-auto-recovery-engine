@@ -21,7 +21,7 @@ public interface TransactionRepository extends JpaRepository<TransactionEntity, 
                         Long accountId, LocalDateTime from, LocalDateTime to, Pageable pageable);
 
         @Query("SELECT t.type AS type, COUNT(t) AS count, COALESCE(SUM(t.amount), 0) AS totalAmount " +
-                        "FROM Transaction t WHERE t.accountId = :accountId " +
+                        "FROM TransactionEntity t WHERE t.account.id = :accountId " +
                         "AND t.createdAt >= :from AND t.createdAt <= :to " +
                         "GROUP BY t.type")
         List<Object[]> getTransactionSummary(

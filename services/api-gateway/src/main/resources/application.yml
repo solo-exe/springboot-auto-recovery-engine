@@ -1,30 +1,56 @@
 server:
-  port: 8080
+    port: 8080
 
 spring:
-  application:
-    name: api-gateway
-  cloud:
-    gateway:
-      default-filters:
-        - name: CircuitBreaker
-          args:
-            name: defaultCB
-            fallbackUri: forward:/fallback
+    application:
+        name: api-gateway
+    datasource:
+        url: jdbc:postgresql://localhost:5432/are_db
+        username: are_user
+        password: are_password
+        hikari:
+            maximum-pool-size: 5
+            minimum-idle: 1
+            connection-timeout: 5000
+    rabbitmq:
+        host: localhost
+        port: 5672
+        username: guest
+        password: guest
+    cloud:
+        gateway:
+            server:
+                webflux:
+                    default-filters:
+                        - name: CircuitBreaker
+                          args:
+                              name: defaultCB
+                              fallbackUri: forward:/fallback
+
+springdoc:
+    swagger-ui:
+        urls:
+            - name: Account Service
+              url: /v3/api-docs/account
+            - name: Payment Service
+              url: /v3/api-docs/payment
+            - name: Notification Worker
+              url: /v3/api-docs/notification
+        configUrl: /v3/api-docs
 
 jwt:
-  secret: auto-recovery-engine-secret-key-for-jwt-token-signing-256bit
+    secret: auto-recovery-engine-secret-key-for-jwt-token-signing-256bit
 
 management:
-  endpoints:
-    web:
-      exposure:
-        include: health,prometheus,info,circuitbreakers,env,shutdown
-  endpoint:
-    health:
-      show-details: always
-    shutdown:
-      enabled: true
-  metrics:
-    tags:
-      application: api-gateway
+    endpoints:
+        web:
+            exposure:
+                include: health,prometheus,info,circuitbreakers,env,shutdown
+    endpoint:
+        health:
+            show-details: always
+        shutdown:
+            access: UNRESTRICTED
+    metrics:
+        tags:
+            application: api-gateway

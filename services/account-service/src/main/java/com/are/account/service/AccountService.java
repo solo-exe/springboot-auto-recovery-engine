@@ -134,7 +134,7 @@ public class AccountService {
     private void recordTransaction(AccountEntity account, TransactionEntry type, BigDecimal amount,
             BigDecimal balanceBefore, BigDecimal balanceAfter, String description) {
         TransactionEntity txn = new TransactionEntity();
-        txn.setAccountId(account.getId());
+        txn.setAccount(account);
         txn.setType(type);
         txn.setAmount(amount);
         txn.setBalanceBefore(balanceBefore);

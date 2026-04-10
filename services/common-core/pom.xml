@@ -28,12 +28,32 @@
         <dependency>
             <groupId>org.liquibase</groupId>
             <artifactId>liquibase-core</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.commons</groupId>
+                    <artifactId>commons-text</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
+        <!-- Explicit commons-text dependency to avoid conflicts -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-text</artifactId>
+            <version>1.13.0</version>
+        </dependency>
+
         <!-- Lombok -->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <optional>true</optional>
+        </dependency>
+        
+        <!-- Spring Documentation -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-api</artifactId>
+            <version>${springdoc.version}</version>
         </dependency>
     </dependencies>
     <build>
@@ -67,7 +87,7 @@
                     <referenceUrl>hibernate:spring:com.are.common.model?dialect=org.hibernate.dialect.PostgreSQLDialect</referenceUrl>
 
                     <!-- Generate SQL instead of XML/YAML -->
-                    <diffChangeLogFile>${project.basedir}/src/main/resources/db/changelog/migrations/${maven.build.timestamp}_changelog.postgresql.sql</diffChangeLogFile>
+                    <diffChangeLogFile>${project.basedir}/src/main/resources/db/changelog/migrations/${maven.build.timestamp}_changelog.postgresql.yaml</diffChangeLogFile>
                     <changeLogFile>src/main/resources/db/changelog/db.changelog-master.yaml</changeLogFile>
                 </configuration>
                 <dependencies>

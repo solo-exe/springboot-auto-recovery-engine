@@ -21,7 +21,10 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
 
     private static final List<String> PUBLIC_PATHS = List.of(
             "/auth/token",
-            "/actuator");
+            "/actuator",
+            "/v3/api-docs",
+            "/swagger-ui",
+            "/webjars");
 
     public JwtAuthFilter(SecretKey secretKey) {
         this.secretKey = secretKey;

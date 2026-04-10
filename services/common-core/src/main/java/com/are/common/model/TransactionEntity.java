@@ -13,9 +13,6 @@ import java.math.BigDecimal;
 @Table(name = "transactions")
 public class TransactionEntity extends BaseEntity {
 
-    @Column(nullable = false)
-    private Long accountId;
-
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "account_id", nullable = false)
     private AccountEntity account;
@@ -25,30 +22,30 @@ public class TransactionEntity extends BaseEntity {
     private UserEntity user;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
+    @Column(name = "transaction_type", nullable = false, length = 20)
     private TransactionEntry type;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(name = "status", nullable = false)
     private TransactionStatus status = TransactionStatus.pending;
 
     @NotNull(message = "Amount cannot be null")
     @DecimalMin(value = "0.0", inclusive = true, message = "Amount must be zero or positive")
-    @Column(nullable = false, precision = 19, scale = 4)
+    @Column(name = "amount", nullable = false, precision = 19, scale = 4)
     private BigDecimal amount;
 
-    @Column(precision = 19, scale = 4)
+    @Column(name = "balance_before", precision = 19, scale = 4)
     private BigDecimal balanceBefore;
 
-    @Column(precision = 19, scale = 4)
+    @Column(name = "balance_after", precision = 19, scale = 4)
     private BigDecimal balanceAfter;
 
-    @Column(nullable = false, length = 100)
+    @Column(name = "reference", nullable = false, length = 100)
     private String reference;
 
-    @Column(length = 500)
+    @Column(name = "description", length = 500, nullable = true)
     private String description;
 
-    @Column(nullable = false, length = 50)
+    @Column(name = "correlation_id", nullable = false, length = 50)
     private String correlationId;
 }

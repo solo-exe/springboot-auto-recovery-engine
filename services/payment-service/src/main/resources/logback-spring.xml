@@ -1,14 +1,29 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
+    <springProperty name="applicationName" source="spring.application.name" defaultValue="unknown"/>
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder class="net.logstash.logback.encoder.LogstashEncoder">
             <includeMdcKeyName>correlationId</includeMdcKeyName>
             <includeMdcKeyName>serviceName</includeMdcKeyName>
-            <customFields>{"service":"${spring.application.name}"}</customFields>
+            <customFields>{"service":"${applicationName}"}</customFields>
         </encoder>
     </appender>
 
-    <root level="INFO">
+    <!-- Suppress verbose Spring Framework logs -->
+    <logger name="org.springframework" level="WARN"/>
+    <logger name="org.springframework.boot" level="WARN"/>
+    <logger name="org.springframework.cloud" level="WARN"/>
+    <logger name="org.springframework.web" level="WARN"/>
+    <logger name="org.hibernate" level="WARN"/>
+    <logger name="org.postgresql" level="WARN"/>
+    <logger name="com.zaxxer.hikari" level="WARN"/>
+    <logger name="io.netty" level="WARN"/>
+    
+    <!-- Show your application logs at INFO level -->
+    <logger name="com.are" level="INFO"/>
+
+    <!-- Root logger - catches everything else -->
+    <root level="WARN">
         <appender-ref ref="STDOUT"/>
     </root>
 </configuration>

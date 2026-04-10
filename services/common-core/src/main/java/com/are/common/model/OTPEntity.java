@@ -16,12 +16,20 @@ public class OTPEntity extends BaseEntity {
     @JoinColumn(name = "user_id", nullable = false)
     private UserEntity user;
 
-    @Column(nullable = false)
+    @Column(name = "otp", nullable = false)
     private String otp;
 
-    @Column(nullable = true)
+    @Enumerated(EnumType.STRING)
+    @Column(name = "recipient", nullable = false)
+    private OTPRecipient recipient;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "type", nullable = false)
+    private OTPType type;
+
+    @Column(name = "used_at", nullable = true)
     private LocalDateTime usedAt;
 
-    @Column(nullable = false)
+    @Column(name = "expires_at", nullable = false)
     private LocalDateTime expiresAt;
 }

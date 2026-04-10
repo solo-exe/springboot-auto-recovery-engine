@@ -1,6 +1,6 @@
 package com.are.payment.repository;
 
-import com.are.common.model.Payment;
+import com.are.common.model.PaymentEntity;
 import com.are.common.model.PaymentStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -13,19 +13,19 @@ import java.math.BigDecimal;
 import java.util.List;
 
 @Repository
-public interface PaymentRepository extends JpaRepository<Payment, Long> {
+public interface PaymentRepository extends JpaRepository<PaymentEntity, Long> {
 
-    Page<Payment> findByFromAccountIdOrToAccountId(Long fromAccountId, Long toAccountId, Pageable pageable);
+    Page<PaymentEntity> findByFromAccountIdOrToAccountId(Long fromAccountId, Long toAccountId, Pageable pageable);
 
-    Page<Payment> findByStatus(PaymentStatus status, Pageable pageable);
+    Page<PaymentEntity> findByStatus(PaymentStatus status, Pageable pageable);
 
-    Page<Payment> findByFromAccountId(Long fromAccountId, Pageable pageable);
+    Page<PaymentEntity> findByFromAccountId(Long fromAccountId, Pageable pageable);
 
-    List<Payment> findByCorrelationId(String correlationId);
+    List<PaymentEntity> findByCorrelationId(String correlationId);
 
-    @Query("SELECT COUNT(p) FROM Payment p WHERE p.status = :status")
+    @Query("SELECT COUNT(p) FROM PaymentEntity p WHERE p.status = :status")
     long countByStatus(@Param("status") PaymentStatus status);
 
-    @Query("SELECT COALESCE(SUM(p.amount), 0) FROM Payment p WHERE p.status = 'COMPLETED'")
+    @Query("SELECT COALESCE(SUM(p.amount), 0) FROM PaymentEntity p WHERE p.status = 'COMPLETED'")
     BigDecimal sumCompletedPayments();
 }
