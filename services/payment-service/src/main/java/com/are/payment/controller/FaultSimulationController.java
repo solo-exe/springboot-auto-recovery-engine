@@ -1,9 +1,12 @@
 package com.are.payment.controller;
 
+import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -15,63 +18,64 @@ public class FaultSimulationController {
     private final AtomicInteger errorRatePercent = new AtomicInteger(0);
     private final AtomicBoolean simulateMemoryLeak = new AtomicBoolean(false);
     private final AtomicBoolean simulateCpuSpike = new AtomicBoolean(false);
-    private final AtomicBoolean simulateDbPoolExhaust = new AtomicBoolean(false);
     private final List<byte[]> leakedMemory = new ArrayList<>();
 
+    public FaultSimulationController(MeterRegistry meterRegistry) {
+        Gauge.builder("are.fault.active", this, ctrl ->
+                        (ctrl.simulateUnresponsive.get() || ctrl.errorRatePercent.get() > 0 ||
+                                ctrl.simulateMemoryLeak.get() || ctrl.simulateCpuSpike.get()) ? 1.0 : 0.0)
+                .description("Whether any fault simulation is currently active")
+                .register(meterRegistry);
+    }
+
     @PostMapping("/unresponsive")
-    public String toggleUnresponsive(@RequestParam boolean enable) {
+    public Map<String, Object> toggleUnresponsive(@RequestBody Map<String, Boolean> body) {
+        boolean enable = body.getOrDefault("enable", false);
         simulateUnresponsive.set(enable);
-        return "Unresponsive simulation: " + enable;
+        return Map.of("fault", "unresponsive", "active", enable);
     }
 
     @PostMapping("/error-rate")
-    public String setErrorRate(@RequestParam int percent) {
-        errorRatePercent.set(percent);
-        return "Error rate set to: " + percent + "%";
+    public Map<String, Object> setErrorRate(@RequestBody Map<String, Integer> body) {
+        int rate = body.getOrDefault("rate", 0);
+        errorRatePercent.set(rate);
+        return Map.of("fault", "error-rate", "rate", rate);
     }
 
     @PostMapping("/memory-leak")
-    public String toggleMemoryLeak(@RequestParam boolean enable) {
+    public Map<String, Object> toggleMemoryLeak(@RequestBody Map<String, Boolean> body) {
+        boolean enable = body.getOrDefault("enable", false);
         simulateMemoryLeak.set(enable);
-        if (!enable)
+        if (enable) {
+            Thread.ofVirtual().name("memory-leak-sim").start(() -> {
+                while (simulateMemoryLeak.get()) {
+                    leakedMemory.add(new byte[1024 * 1024]);
+                    try { Thread.sleep(500); } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt(); break;
+                    }
+                }
+            });
+        } else {
             leakedMemory.clear();
-        return "Memory leak simulation: " + enable;
+        }
+        return Map.of("fault", "memory-leak", "active", enable);
     }
 
     @PostMapping("/cpu-spike")
-    public String toggleCpuSpike(@RequestParam boolean enable) {
+    public Map<String, Object> toggleCpuSpike(@RequestBody Map<String, Boolean> body) {
+        boolean enable = body.getOrDefault("enable", false);
         simulateCpuSpike.set(enable);
         if (enable) {
-            Thread.ofVirtual().start(() -> {
-                while (simulateCpuSpike.get()) {
-                    Math.random();
-                }
-            });
+            int cores = Runtime.getRuntime().availableProcessors();
+            for (int i = 0; i < cores; i++) {
+                Thread.ofVirtual().name("cpu-spike-sim-" + i).start(() -> {
+                    while (simulateCpuSpike.get()) { Math.random(); }
+                });
+            }
         }
-        return "CPU spike simulation: " + enable;
+        return Map.of("fault", "cpu-spike", "active", enable);
     }
 
-    @PostMapping("/db-pool-exhaust")
-    public String toggleDbPoolExhaust(@RequestParam boolean enable) {
-        simulateDbPoolExhaust.set(enable);
-        return "DB pool exhaustion simulation: " + enable;
-    }
-
-    public boolean isUnresponsive() {
-        return simulateUnresponsive.get();
-    }
-
-    public int getErrorRate() {
-        return errorRatePercent.get();
-    }
-
-    public boolean isDbPoolExhaust() {
-        return simulateDbPoolExhaust.get();
-    }
-
-    public void leakMemory() {
-        if (simulateMemoryLeak.get()) {
-            leakedMemory.add(new byte[1024 * 1024]); // 1MB per call
-        }
-    }
+    public boolean isUnresponsive() { return simulateUnresponsive.get(); }
+    public int getErrorRate() { return errorRatePercent.get(); }
 }

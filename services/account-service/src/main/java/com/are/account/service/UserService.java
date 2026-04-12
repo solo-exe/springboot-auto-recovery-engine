@@ -1,19 +1,19 @@
-package com.are.user.service;
+package com.are.account.service;
 
 import com.are.account.config.RabbitConfig;
+import com.are.account.dto.UserRegistrationRequest;
+import com.are.account.dto.UserResponse;
+import com.are.account.dto.VerifyOnboardOtpRequest;
 import com.are.account.repository.AccountRepository;
 import com.are.account.repository.OTPRepository;
 import com.are.account.repository.UserRepository;
-import com.are.account.service.OnboardingWorkerService;
 import com.are.common.model.AccountEntity;
 import com.are.common.model.AccountStatus;
 import com.are.common.model.OTPRecipient;
 import com.are.common.model.OTPType;
 import com.are.common.model.OTPEntity;
 import com.are.common.model.UserEntity;
-import com.are.user.dto.UserRegistrationRequest;
-import com.are.user.dto.UserResponse;
-import com.are.user.dto.VerifyOnboardOtpRequest;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;

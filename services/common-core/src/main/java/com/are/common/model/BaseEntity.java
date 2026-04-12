@@ -25,7 +25,7 @@ public abstract class BaseEntity {
     @Column(name = "deleted", nullable = false)
     private Boolean deleted = false;
 
-    @Column(name = "deleted_at", nullable = false)
+    @Column(name = "deleted_at")
     private LocalDateTime deletedAt;
 
     // Soft delete helper methods

@@ -12,9 +12,9 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class RabbitConfig {
 
-    public static final String NOTIFICATION_QUEUE = "notification.queue";
-    public static final String NOTIFICATION_EXCHANGE = "notification.exchange";
-    public static final String NOTIFICATION_ROUTING_KEY = "notification.payment";
+    public static final String PAYMENT_EXCHANGE = "are.payments";
+    public static final String NOTIFICATION_QUEUE = "are.notifications";
+    public static final String PAYMENT_COMPLETED_ROUTING_KEY = "payment.completed";
 
     @Bean
     public Queue notificationQueue() {
@@ -22,15 +22,15 @@ public class RabbitConfig {
     }
 
     @Bean
-    public DirectExchange notificationExchange() {
-        return new DirectExchange(NOTIFICATION_EXCHANGE);
+    public DirectExchange paymentExchange() {
+        return new DirectExchange(PAYMENT_EXCHANGE);
     }
 
     @Bean
-    public Binding notificationBinding(Queue notificationQueue, DirectExchange notificationExchange) {
+    public Binding notificationBinding(Queue notificationQueue, DirectExchange paymentExchange) {
         return BindingBuilder.bind(notificationQueue)
-                .to(notificationExchange)
-                .with(NOTIFICATION_ROUTING_KEY);
+                .to(paymentExchange)
+                .with(PAYMENT_COMPLETED_ROUTING_KEY);
     }
 
     @Bean

@@ -1,9 +1,9 @@
-package com.are.user.controller;
+package com.are.account.controller;
 
-import com.are.user.dto.UserRegistrationRequest;
-import com.are.user.dto.UserResponse;
-import com.are.user.dto.VerifyOnboardOtpRequest;
-import com.are.user.service.UserService;
+import com.are.account.dto.UserRegistrationRequest;
+import com.are.account.dto.UserResponse;
+import com.are.account.dto.VerifyOnboardOtpRequest;
+import com.are.account.service.UserService;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

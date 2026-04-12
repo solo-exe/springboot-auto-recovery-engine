@@ -1,104 +1,53 @@
 package com.are.notification.service;
 
-import jakarta.mail.MessagingException;
-import jakarta.mail.internet.MimeMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
-import java.util.Map;
+import java.time.LocalDateTime;
+import java.util.*;
+import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.atomic.AtomicInteger;
 
+/**
+ * Processes payment notifications and stores them in-memory (max 50 entries).
+ */
 @Service
 public class NotificationService {
 
     private static final Logger log = LoggerFactory.getLogger(NotificationService.class);
+    private static final int MAX_ENTRIES = 50;
 
-    private final JavaMailSender mailSender;
-    private final String fromAddress;
-
-    public NotificationService(JavaMailSender mailSender,
-            @Value("${spring.mail.username:donotreply@are.example}") String fromAddress) {
-        this.mailSender = mailSender;
-        this.fromAddress = fromAddress;
-    }
+    private final ConcurrentLinkedDeque<Map<String, Object>> recentNotifications = new ConcurrentLinkedDeque<>();
+    private final AtomicInteger count = new AtomicInteger(0);
 
     public void processNotification(Map<String, Object> event) {
-        String type = String.valueOf(event.get("type"));
+        String reference = String.valueOf(event.getOrDefault("reference", "unknown"));
+        Object amount = event.getOrDefault("amount", "0");
+        String destination = String.valueOf(event.getOrDefault("destinationAccountNumber", "unknown"));
+        String correlationId = String.valueOf(event.getOrDefault("correlationId", ""));
 
-        switch (type) {
-            case "ONBOARDING_OTP" -> sendOnboardingOtp(event);
-            case "ONBOARDING_COMPLETE" -> sendOnboardingComplete(event);
-            case "PAYMENT" -> sendPaymentNotification(event);
-            default -> log.info("[NOTIFICATION] Unsupported event type: {}", type);
+        log.info("Payment notification processed: reference={}, amount={}, destination={}",
+                reference, amount, destination);
+
+        // Build notification entry
+        Map<String, Object> entry = new LinkedHashMap<>();
+        entry.put("id", count.incrementAndGet());
+        entry.put("reference", reference);
+        entry.put("amount", amount);
+        entry.put("destinationAccountNumber", destination);
+        entry.put("correlationId", correlationId);
+        entry.put("processedAt", LocalDateTime.now().toString());
+        entry.putAll(event);
+
+        // Add to deque, evict oldest if over limit
+        recentNotifications.addFirst(entry);
+        while (recentNotifications.size() > MAX_ENTRIES) {
+            recentNotifications.removeLast();
         }
     }
 
-    private void sendOnboardingOtp(Map<String, Object> event) {
-        String email = String.valueOf(event.get("email"));
-        String firstName = String.valueOf(event.get("firstName"));
-        String otp = String.valueOf(event.get("otp"));
-        String subject = String.valueOf(event.getOrDefault("subject", "Complete your onboarding"));
-        String body = String.valueOf(event.getOrDefault("body",
-                "Hello " + firstName + ",<br><br>Your onboarding OTP is <strong>" + otp + "</strong>. " +
-                        "Please use it within the next 10 minutes to complete your registration."));
-
-        sendEmail(email, subject, body);
-    }
-
-    private void sendOnboardingComplete(Map<String, Object> event) {
-        String email = String.valueOf(event.get("email"));
-        String firstName = String.valueOf(event.get("firstName"));
-        String accountNumber = String.valueOf(event.get("accountNumber"));
-        String subject = String.valueOf(event.getOrDefault("subject", "Your account is ready"));
-        String body = String.valueOf(event.getOrDefault("body",
-                "Hello " + firstName + ",<br><br>Congratulations! Your account " + accountNumber + " is now active."));
-
-        sendEmail(email, subject, body);
-    }
-
-    private void sendPaymentNotification(Map<String, Object> event) {
-        String status = String.valueOf(event.get("status"));
-        Object paymentId = event.get("paymentId");
-        Object amount = event.get("amount");
-        String currency = String.valueOf(event.get("currency"));
-        String correlationId = String.valueOf(event.get("correlationId"));
-        String email = String.valueOf(event.getOrDefault("email", "")).trim();
-
-        String subject = "Payment notification";
-        String body = switch (status) {
-            case "COMPLETED" -> "Payment " + paymentId + " completed — " + amount + " " + currency +
-                    " transferred successfully. CorrelationId: " + correlationId;
-            case "FAILED" -> "Payment " + paymentId + " failed. CorrelationId: " + correlationId;
-            case "REFUNDED" -> "Payment " + paymentId + " refunded — " + amount + " " + currency +
-                    " returned. CorrelationId: " + correlationId;
-            default -> "Payment " + paymentId + " status: " + status;
-        };
-
-        if (email.isBlank()) {
-            log.info("[NOTIFICATION] Payment event without email: subject='{}', body='{}'", subject, body);
-            return;
-        }
-
-        sendEmail(email, subject, body);
-    }
-
-    private void sendEmail(String to, String subject, String htmlBody) {
-        try {
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, "UTF-8");
-            helper.setFrom(fromAddress);
-            helper.setTo(to);
-            helper.setSubject(subject);
-            helper.setText(htmlBody, true);
-            mailSender.send(message);
-            log.info("Sent notification email to {} with subject '{}'.", to, subject);
-        } catch (MessagingException e) {
-            log.error("Failed to build email message for {}: {}", to, e.getMessage(), e);
-        } catch (Exception e) {
-            log.error("Failed to send notification email to {}: {}", to, e.getMessage(), e);
-        }
+    public List<Map<String, Object>> getRecentNotifications() {
+        return new ArrayList<>(recentNotifications);
     }
 }

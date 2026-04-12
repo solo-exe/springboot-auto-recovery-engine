@@ -1,33 +1,41 @@
 server:
-  port: 8085
+    port: 8085
 
 spring:
-  application:
-    name: notification-worker
-  rabbitmq:
-    host: localhost
-    port: 5672
-    username: guest
-    password: guest
-  mail:
-    host: ${MAIL_HOST:localhost}
-    port: ${MAIL_PORT:25}
-    username: ${MAIL_USERNAME:}
-    password: ${MAIL_PASSWORD:}
-    properties:
-      "[mail.smtp.auth]": ${MAIL_SMTP_AUTH:false}
-      "[mail.smtp.starttls.enable]": ${MAIL_SMTP_STARTTLS_ENABLE:false}
+    application:
+        name: notification-worker
+    threads:
+        virtual:
+            enabled: true
+    rabbitmq:
+        host: localhost
+        port: 5672
+        username: guest
+        password: guest
+    autoconfigure:
+        exclude:
+            - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+            - org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
+            - org.springframework.boot.autoconfigure.mail.MailSenderAutoConfiguration
 
 management:
-  endpoints:
-    web:
-      exposure:
-        include: health,prometheus,info,env,shutdown
-  endpoint:
-    health:
-      show-details: always
-    shutdown:
-      access: UNRESTRICTED
-  metrics:
-    tags:
-      application: notification-worker
+    endpoints:
+        web:
+            exposure:
+                include: health,prometheus,info,env,shutdown
+    endpoint:
+        health:
+            show-details: always
+        shutdown:
+            access: UNRESTRICTED
+    metrics:
+        tags:
+            application: notification-worker
+
+springdoc:
+    swagger-ui:
+        url: /v3/api-docs
+    info:
+        title: Notification Worker API
+        version: 1.0.0
+        description: API for notification services.

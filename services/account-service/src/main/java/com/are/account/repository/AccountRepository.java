@@ -17,6 +17,8 @@ public interface AccountRepository extends JpaRepository<AccountEntity, Long> {
 
     Optional<AccountEntity> findByUser(UserEntity user);
 
+    Optional<AccountEntity> findByUserId(Long userId);
+
     Page<AccountEntity> findByStatus(AccountStatus status, Pageable pageable);
 
     boolean existsByAccountNumber(String accountNumber);

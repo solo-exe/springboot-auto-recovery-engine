@@ -7,24 +7,35 @@ import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
 import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
+/**
+ * JWT validation filter for the API Gateway.
+ * Validates tokens issued by account-service.
+ * On success, adds X-User-Id and X-User-Role headers to downstream requests.
+ */
 @Component
 public class JwtAuthFilter implements GlobalFilter, Ordered {
 
     private final SecretKey secretKey;
 
     private static final List<String> PUBLIC_PATHS = List.of(
-            "/auth/token",
+            "/api/accounts/auth/",
+            "/internal/",
             "/actuator",
             "/v3/api-docs",
             "/swagger-ui",
-            "/webjars");
+            "/webjars",
+            "/fault/",
+            "/notifications/"
+    );
 
     public JwtAuthFilter(SecretKey secretKey) {
         this.secretKey = secretKey;
@@ -43,8 +54,7 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
 
         String authHeader = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
-            return exchange.getResponse().setComplete();
+            return unauthorizedResponse(exchange, "Missing or invalid Authorization header");
         }
 
         String token = authHeader.substring(7);
@@ -55,20 +65,33 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
                     .parseSignedClaims(token)
                     .getPayload();
 
+            String userId = claims.getSubject();
+            String role = claims.get("role", String.class);
+
             // Add user info to request headers for downstream services
             exchange = exchange.mutate()
-                    .request(r -> r.header("X-User-Id", claims.getSubject()))
+                    .request(r -> r
+                            .header("X-User-Id", userId)
+                            .header("X-User-Role", role != null ? role : "CUSTOMER"))
                     .build();
 
             return chain.filter(exchange);
         } catch (Exception e) {
-            exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
-            return exchange.getResponse().setComplete();
+            return unauthorizedResponse(exchange, "Invalid or expired token");
         }
+    }
+
+    private Mono<Void> unauthorizedResponse(ServerWebExchange exchange, String message) {
+        exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
+        exchange.getResponse().getHeaders().setContentType(MediaType.APPLICATION_JSON);
+        String body = "{\"success\":false,\"data\":null,\"message\":\"" + message + "\"}";
+        byte[] bytes = body.getBytes(StandardCharsets.UTF_8);
+        return exchange.getResponse().writeWith(
+                Mono.just(exchange.getResponse().bufferFactory().wrap(bytes)));
     }
 
     @Override
     public int getOrder() {
-        return -100; // Run before routing
+        return -100; // Run before routing, after CorrelationIdFilter
     }
 }

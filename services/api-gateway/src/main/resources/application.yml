@@ -4,6 +4,9 @@ server:
 spring:
     application:
         name: api-gateway
+    threads:
+        virtual:
+            enabled: true
     datasource:
         url: jdbc:postgresql://localhost:5432/are_db
         username: are_user
@@ -27,19 +30,32 @@ spring:
                               name: defaultCB
                               fallbackUri: forward:/fallback
 
+resilience4j:
+    circuitbreaker:
+        configs:
+            default:
+                slidingWindowSize: 10
+                failureRateThreshold: 50
+                waitDurationInOpenState: 30s
+                permittedNumberOfCallsInHalfOpenState: 3
+                registerHealthIndicator: true
+    timelimiter:
+        configs:
+            default:
+                timeoutDuration: 5s
+
+jwt:
+    secret: ${JWT_SECRET:auto-recovery-engine-secret-key-for-jwt-token-signing-256bit}
+
 springdoc:
     swagger-ui:
+        disable-swagger-default-url: true
         urls:
             - name: Account Service
               url: /v3/api-docs/account
             - name: Payment Service
               url: /v3/api-docs/payment
-            - name: Notification Worker
-              url: /v3/api-docs/notification
         configUrl: /v3/api-docs
-
-jwt:
-    secret: auto-recovery-engine-secret-key-for-jwt-token-signing-256bit
 
 management:
     endpoints:

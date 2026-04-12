@@ -1,11 +1,13 @@
-package com.are;
+package com.are.payment;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
+import org.springframework.context.annotation.ComponentScan;
 
 @SpringBootApplication
-@EntityScan({ "com.are.payment", "com.are.common.model" })
+@EntityScan({"com.are.payment", "com.are.common.model"})
+@ComponentScan({"com.are.payment", "com.are.common"})
 public class PaymentServiceApplication {
 
     public static void main(String[] args) {

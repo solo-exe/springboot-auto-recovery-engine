@@ -66,16 +66,16 @@ compose-logs:
 
 # Run the API Gateway locally
 start-gateway:
-	$(MVN) spring-boot:run -pl services/api-gateway 2>&1 | grep -v "WARNING:"
+	$(MVN) spring-boot:run -pl services/api-gateway # 2>&1 | grep -v "WARNING:"
 
 # Run the Payment Service locally
 start-payment:
-	$(MVN) spring-boot:run -pl services/payment-service 2>&1 | grep -v "WARNING:"
+	$(MVN) spring-boot:run -pl services/payment-service # 2>&1 | grep -v "WARNING:"
 
 # Run the Account Service locally
 start-account:
-	$(MVN) spring-boot:run -pl services/account-service 2>&1 | grep -v "WARNING:"
+	$(MVN) spring-boot:run -pl services/account-service # 2>&1 | grep -v "WARNING:"
 
 # Run the Account Service locally
 start-notif:
-	$(MVN) spring-boot:run -pl services/notification-worker 2>&1 | grep -v "WARNING:"
+	$(MVN) spring-boot:run -pl services/notification-worker # 2>&1 | grep -v "WARNING:"

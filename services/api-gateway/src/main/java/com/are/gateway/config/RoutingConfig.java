@@ -11,34 +11,59 @@ public class RoutingConfig {
         @Bean
         public RouteLocator customRouteLocator(RouteLocatorBuilder builder) {
                 return builder.routes()
-                                // OpenAPI Docs Routes
-                                .route("account-api-docs", r -> r
-                                                .path("/v3/api-docs/account")
-                                                .filters(f -> f.rewritePath("/v3/api-docs/account", "/v3/api-docs"))
-                                                .uri("http://account-service:8082"))
-                                .route("payment-api-docs", r -> r
-                                                .path("/v3/api-docs/payment")
-                                                .filters(f -> f.rewritePath("/v3/api-docs/payment", "/v3/api-docs"))
-                                                .uri("http://payment-service:8081"))
-                                .route("notification-api-docs", r -> r
-                                                .path("/v3/api-docs/notification")
-                                                .filters(f -> f.rewritePath("/v3/api-docs/notification",
-                                                                "/v3/api-docs"))
-                                                .uri("http://notification-worker:8083"))
-
-                                // API Routes
-                                .route("payment-route", r -> r
-                                                .path("/api/payments/**")
+                                // Auth routes (public — no JWT required)
+                                .route("account-auth-route", r -> r
+                                                .path("/api/accounts/auth/**")
                                                 .filters(f -> f.stripPrefix(1))
-                                                .uri("http://payment-service:8081"))
+                                                .uri("http://localhost:8082"))
+
+                                // Account routes (JWT required)
                                 .route("account-route", r -> r
                                                 .path("/api/accounts/**")
                                                 .filters(f -> f.stripPrefix(1))
-                                                .uri("http://account-service:8082"))
-                                .route("transaction-route", r -> r
-                                                .path("/api/transactions/**")
+                                                .uri("http://localhost:8082"))
+
+                                // Payment routes (JWT required)
+                                .route("payment-route", r -> r
+                                                .path("/api/payments/**")
                                                 .filters(f -> f.stripPrefix(1))
-                                                .uri("http://account-service:8082"))
+                                                .uri("http://localhost:8081"))
+
+                                // Internal routes (no JWT — inter-service only)
+                                .route("internal-route", r -> r
+                                                .path("/internal/**")
+                                                .uri("http://localhost:8082"))
+
+                                // Notification routes (public)
+                                .route("notification-route", r -> r
+                                                .path("/notifications/**")
+                                                .uri("http://localhost:8085"))
+
+                                // Fault injection routes (public — no JWT)
+                                .route("account-fault-route", r -> r
+                                                .path("/fault/account/**")
+                                                .filters(f -> f.rewritePath("/fault/account/(?<path>.*)", "/fault/${path}"))
+                                                .uri("http://localhost:8082"))
+                                .route("payment-fault-route", r -> r
+                                                .path("/fault/payment/**")
+                                                .filters(f -> f.rewritePath("/fault/payment/(?<path>.*)", "/fault/${path}"))
+                                                .uri("http://localhost:8081"))
+                                .route("notification-fault-route", r -> r
+                                                .path("/fault/notification/**")
+                                                .filters(f -> f.rewritePath("/fault/notification/(?<path>.*)", "/fault/${path}"))
+                                                .uri("http://localhost:8085"))
+
+                                // Swagger UI routes
+                                .route("account-swagger-ui", r -> r
+                                                .path("/swagger-ui/account/**")
+                                                .filters(f -> f.rewritePath("/swagger-ui/account/(?<path>.*)",
+                                                                "/swagger-ui/${path}"))
+                                                .uri("http://localhost:8082"))
+                                .route("payment-swagger-ui", r -> r
+                                                .path("/swagger-ui/payment/**")
+                                                .filters(f -> f.rewritePath("/swagger-ui/payment/(?<path>.*)",
+                                                                "/swagger-ui/${path}"))
+                                                .uri("http://localhost:8081"))
                                 .build();
         }
 }

@@ -4,6 +4,9 @@ server:
 spring:
     application:
         name: payment-service
+    threads:
+        virtual:
+            enabled: true
     datasource:
         url: jdbc:postgresql://localhost:5432/are_db
         username: are_user
@@ -15,7 +18,7 @@ spring:
             leak-detection-threshold: 10000
     jpa:
         hibernate:
-            ddl-auto: update
+            ddl-auto: none
         show-sql: false
     rabbitmq:
         host: localhost
@@ -25,6 +28,24 @@ spring:
 
 account-service:
     url: http://localhost:8082
+
+resilience4j:
+    circuitbreaker:
+        instances:
+            accountServiceCB:
+                slidingWindowSize: 10
+                failureRateThreshold: 50
+                waitDurationInOpenState: 30s
+                permittedNumberOfCallsInHalfOpenState: 3
+                registerHealthIndicator: true
+
+springdoc:
+    swagger-ui:
+        url: /v3/api-docs
+    info:
+        title: Payment Service API
+        version: 1.0.0
+        description: API for managing payments.
 
 management:
     endpoints:
@@ -39,13 +60,3 @@ management:
     metrics:
         tags:
             application: payment-service
-
-resilience4j:
-    circuitbreaker:
-        instances:
-            accountServiceCB:
-                slidingWindowSize: 10
-                failureRateThreshold: 50
-                waitDurationInOpenState: 30s
-                permittedNumberOfCallsInHalfOpenState: 3
-                registerHealthIndicator: true
