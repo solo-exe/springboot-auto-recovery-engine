@@ -34,10 +34,11 @@ public class AuthService {
     private final JwtService jwtService;
     private final BCryptPasswordEncoder passwordEncoder;
 
-    public AuthService(UserRepository userRepository,
-                       AccountRepository accountRepository,
-                       OTPRepository otpRepository,
-                       JwtService jwtService) {
+    public AuthService(
+            UserRepository userRepository,
+            AccountRepository accountRepository,
+            OTPRepository otpRepository,
+            JwtService jwtService) {
         this.userRepository = userRepository;
         this.accountRepository = accountRepository;
         this.otpRepository = otpRepository;
@@ -89,8 +90,7 @@ public class AuthService {
         return new RegisterResponse(
                 user.getId(),
                 account.getAccountNumber(),
-                "Registration successful. Check logs for OTP."
-        );
+                "Registration successful. Check logs for OTP.");
     }
 
     @Transactional
@@ -152,12 +152,13 @@ public class AuthService {
                 user.getId(),
                 user.getEmail(),
                 role,
-                jwtService.getExpirationSeconds()
-        );
+                jwtService.getExpirationSeconds());
     }
 
     private String generateOtp() {
-        return String.format("%06d", ThreadLocalRandom.current().nextInt(0, 1_000_000));
+        String output = String.format("%06d", ThreadLocalRandom.current().nextInt(0, 1_000_000));
+        System.out.println("THE GENERATED OTP" + output);
+        return output;
     }
 
     private String generateAccountNumber() {

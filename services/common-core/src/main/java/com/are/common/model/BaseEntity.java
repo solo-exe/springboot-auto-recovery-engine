@@ -2,6 +2,8 @@ package com.are.common.model;
 
 import jakarta.persistence.*;
 import lombok.Data;
+
+import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -22,10 +24,11 @@ public abstract class BaseEntity {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
+    @ColumnDefault("false")
     @Column(name = "deleted", nullable = false)
     private Boolean deleted = false;
 
-    @Column(name = "deleted_at")
+    @Column(name = "deleted_at", nullable = true)
     private LocalDateTime deletedAt;
 
     // Soft delete helper methods

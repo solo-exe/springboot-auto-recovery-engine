@@ -1,0 +1,417 @@
+databaseChangeLog:
+- changeSet:
+    id: 1775993823852-1
+    author: solomon (generated)
+    changes:
+    - createTable:
+        columns:
+        - column:
+            autoIncrement: true
+            constraints:
+              nullable: false
+              primaryKey: true
+              primaryKeyName: accountsPK
+            name: id
+            type: BIGINT
+        - column:
+            constraints:
+              nullable: false
+            name: created_at
+            type: TIMESTAMP(6) WITHOUT TIME ZONE
+        - column:
+            constraints:
+              nullable: false
+            defaultValueBoolean: false
+            name: deleted
+            type: BOOLEAN
+        - column:
+            name: deleted_at
+            type: TIMESTAMP(6) WITHOUT TIME ZONE
+        - column:
+            constraints:
+              nullable: false
+            name: updated_at
+            type: TIMESTAMP(6) WITHOUT TIME ZONE
+        - column:
+            constraints:
+              nullable: false
+            name: account_name
+            type: VARCHAR(100)
+        - column:
+            constraints:
+              nullable: false
+            name: account_number
+            type: VARCHAR(20)
+        - column:
+            constraints:
+              nullable: false
+            defaultValueComputed: '0.00'
+            name: balance
+            type: numeric(19, 4)
+        - column:
+            constraints:
+              nullable: false
+            defaultValue: NGN
+            name: currency
+            type: VARCHAR(3)
+        - column:
+            constraints:
+              nullable: false
+            name: status
+            type: VARCHAR(20)
+        - column:
+            name: version
+            type: BIGINT
+        - column:
+            constraints:
+              nullable: false
+            name: user_id
+            type: BIGINT
+        tableName: accounts
+- changeSet:
+    id: 1775993823852-2
+    author: solomon (generated)
+    changes:
+    - createTable:
+        columns:
+        - column:
+            autoIncrement: true
+            constraints:
+              nullable: false
+              primaryKey: true
+              primaryKeyName: otpsPK
+            name: id
+            type: BIGINT
+        - column:
+            constraints:
+              nullable: false
+            name: created_at
+            type: TIMESTAMP(6) WITHOUT TIME ZONE
+        - column:
+            constraints:
+              nullable: false
+            defaultValueBoolean: false
+            name: deleted
+            type: BOOLEAN
+        - column:
+            name: deleted_at
+            type: TIMESTAMP(6) WITHOUT TIME ZONE
+        - column:
+            constraints:
+              nullable: false
+            name: updated_at
+            type: TIMESTAMP(6) WITHOUT TIME ZONE
+        - column:
+            constraints:
+              nullable: false
+            name: expires_at
+            type: TIMESTAMP(6) WITHOUT TIME ZONE
+        - column:
+            constraints:
+              nullable: false
+            name: otp
+            type: VARCHAR(255)
+        - column:
+            constraints:
+              nullable: false
+            name: recipient
+            type: VARCHAR(255)
+        - column:
+            constraints:
+              nullable: false
+            name: type
+            type: VARCHAR(255)
+        - column:
+            name: used_at
+            type: TIMESTAMP(6) WITHOUT TIME ZONE
+        - column:
+            constraints:
+              nullable: false
+            name: user_id
+            type: BIGINT
+        tableName: otps
+- changeSet:
+    id: 1775993823852-3
+    author: solomon (generated)
+    changes:
+    - createTable:
+        columns:
+        - column:
+            autoIncrement: true
+            constraints:
+              nullable: false
+              primaryKey: true
+              primaryKeyName: paymentsPK
+            name: id
+            type: BIGINT
+        - column:
+            constraints:
+              nullable: false
+            name: created_at
+            type: TIMESTAMP(6) WITHOUT TIME ZONE
+        - column:
+            constraints:
+              nullable: false
+            defaultValueBoolean: false
+            name: deleted
+            type: BOOLEAN
+        - column:
+            name: deleted_at
+            type: TIMESTAMP(6) WITHOUT TIME ZONE
+        - column:
+            constraints:
+              nullable: false
+            name: updated_at
+            type: TIMESTAMP(6) WITHOUT TIME ZONE
+        - column:
+            constraints:
+              nullable: false
+            name: amount
+            type: numeric(19, 4)
+        - column:
+            name: correlationId
+            type: VARCHAR(50)
+        - column:
+            constraints:
+              nullable: false
+            name: currency
+            type: VARCHAR(3)
+        - column:
+            name: description
+            type: VARCHAR(500)
+        - column:
+            name: failure_reason
+            type: VARCHAR(500)
+        - column:
+            constraints:
+              nullable: false
+            name: fromAccountId
+            type: BIGINT
+        - column:
+            constraints:
+              nullable: false
+            name: reference
+            type: VARCHAR(100)
+        - column:
+            constraints:
+              nullable: false
+            name: status
+            type: VARCHAR(20)
+        - column:
+            constraints:
+              nullable: false
+            name: toAccountId
+            type: BIGINT
+        tableName: payments
+- changeSet:
+    id: 1775993823852-4
+    author: solomon (generated)
+    changes:
+    - createTable:
+        columns:
+        - column:
+            autoIncrement: true
+            constraints:
+              nullable: false
+              primaryKey: true
+              primaryKeyName: transactionsPK
+            name: id
+            type: BIGINT
+        - column:
+            constraints:
+              nullable: false
+            name: created_at
+            type: TIMESTAMP(6) WITHOUT TIME ZONE
+        - column:
+            constraints:
+              nullable: false
+            defaultValueBoolean: false
+            name: deleted
+            type: BOOLEAN
+        - column:
+            name: deleted_at
+            type: TIMESTAMP(6) WITHOUT TIME ZONE
+        - column:
+            constraints:
+              nullable: false
+            name: updated_at
+            type: TIMESTAMP(6) WITHOUT TIME ZONE
+        - column:
+            constraints:
+              nullable: false
+            name: amount
+            type: numeric(19, 4)
+        - column:
+            name: balance_after
+            type: numeric(19, 4)
+        - column:
+            name: balance_before
+            type: numeric(19, 4)
+        - column:
+            constraints:
+              nullable: false
+            name: correlation_id
+            type: VARCHAR(50)
+        - column:
+            name: description
+            type: VARCHAR(500)
+        - column:
+            constraints:
+              nullable: false
+            name: reference
+            type: VARCHAR(100)
+        - column:
+            constraints:
+              nullable: false
+            name: status
+            type: VARCHAR(255)
+        - column:
+            constraints:
+              nullable: false
+            name: transaction_type
+            type: VARCHAR(20)
+        - column:
+            constraints:
+              nullable: false
+            name: account_id
+            type: BIGINT
+        - column:
+            constraints:
+              nullable: false
+            name: user_id
+            type: BIGINT
+        tableName: transactions
+- changeSet:
+    id: 1775993823852-5
+    author: solomon (generated)
+    changes:
+    - createTable:
+        columns:
+        - column:
+            autoIncrement: true
+            constraints:
+              nullable: false
+              primaryKey: true
+              primaryKeyName: usersPK
+            name: id
+            type: BIGINT
+        - column:
+            constraints:
+              nullable: false
+            name: created_at
+            type: TIMESTAMP(6) WITHOUT TIME ZONE
+        - column:
+            constraints:
+              nullable: false
+            defaultValueBoolean: false
+            name: deleted
+            type: BOOLEAN
+        - column:
+            name: deleted_at
+            type: TIMESTAMP(6) WITHOUT TIME ZONE
+        - column:
+            constraints:
+              nullable: false
+            name: updated_at
+            type: TIMESTAMP(6) WITHOUT TIME ZONE
+        - column:
+            constraints:
+              nullable: false
+            name: email
+            type: VARCHAR(255)
+        - column:
+            constraints:
+              nullable: false
+            name: first_name
+            type: VARCHAR(255)
+        - column:
+            constraints:
+              nullable: false
+            name: last_name
+            type: VARCHAR(255)
+        - column:
+            name: password
+            type: VARCHAR(255)
+        - column:
+            name: phone_number
+            type: VARCHAR(20)
+        - column:
+            constraints:
+              nullable: false
+            name: status
+            type: SMALLINT
+        - column:
+            constraints:
+              nullable: false
+            name: user_type
+            type: VARCHAR(255)
+        tableName: users
+- changeSet:
+    id: 1775993823852-6
+    author: solomon (generated)
+    changes:
+    - addUniqueConstraint:
+        columnNames: account_number
+        constraintName: UC_ACCOUNTSACCOUNT_NUMBER_COL
+        tableName: accounts
+- changeSet:
+    id: 1775993823852-7
+    author: solomon (generated)
+    changes:
+    - addUniqueConstraint:
+        columnNames: email
+        constraintName: UC_USERSEMAIL_COL
+        tableName: users
+- changeSet:
+    id: 1775993823852-8
+    author: solomon (generated)
+    changes:
+    - addForeignKeyConstraint:
+        baseColumnNames: account_id
+        baseTableName: transactions
+        constraintName: FK20w7wsg13u9srbq3bd7chfxdh
+        deferrable: false
+        initiallyDeferred: false
+        referencedColumnNames: id
+        referencedTableName: accounts
+        validate: true
+- changeSet:
+    id: 1775993823852-9
+    author: solomon (generated)
+    changes:
+    - addForeignKeyConstraint:
+        baseColumnNames: user_id
+        baseTableName: accounts
+        constraintName: FKnjuop33mo69pd79ctplkck40n
+        deferrable: false
+        initiallyDeferred: false
+        referencedColumnNames: id
+        referencedTableName: users
+        validate: true
+- changeSet:
+    id: 1775993823852-10
+    author: solomon (generated)
+    changes:
+    - addForeignKeyConstraint:
+        baseColumnNames: user_id
+        baseTableName: transactions
+        constraintName: FKqwv7rmvc8va8rep7piikrojds
+        deferrable: false
+        initiallyDeferred: false
+        referencedColumnNames: id
+        referencedTableName: users
+        validate: true
+- changeSet:
+    id: 1775993823852-11
+    author: solomon (generated)
+    changes:
+    - addForeignKeyConstraint:
+        baseColumnNames: user_id
+        baseTableName: otps
+        constraintName: FKseso6nlp9f5fbuilrngn3pbyi
+        deferrable: false
+        initiallyDeferred: false
+        referencedColumnNames: id
+        referencedTableName: users
+        validate: true
+

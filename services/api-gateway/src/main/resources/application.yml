@@ -47,15 +47,15 @@ resilience4j:
 jwt:
     secret: ${JWT_SECRET:auto-recovery-engine-secret-key-for-jwt-token-signing-256bit}
 
-springdoc:
-    swagger-ui:
-        disable-swagger-default-url: true
-        urls:
-            - name: Account Service
-              url: /v3/api-docs/account
-            - name: Payment Service
-              url: /v3/api-docs/payment
-        configUrl: /v3/api-docs
+# springdoc:
+#     swagger-ui:
+#         disable-swagger-default-url: true
+#         urls:
+#             - name: Account Service
+#               url: /v3/api-docs/account
+#             - name: Payment Service
+#               url: /v3/api-docs/payment
+#         configUrl: /v3/api-docs
 
 management:
     endpoints:

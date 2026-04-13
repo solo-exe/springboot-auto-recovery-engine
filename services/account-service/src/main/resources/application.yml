@@ -25,14 +25,16 @@ spring:
         port: 5672
         username: guest
         password: guest
+    liquibase:
+        enabled: false
 
 jwt:
     secret: ${JWT_SECRET:auto-recovery-engine-secret-key-for-jwt-token-signing-256bit}
     expiration-seconds: 86400
 
 springdoc:
-    swagger-ui:
-        url: /v3/api-docs
+    api-docs:
+        path: /v3/api-docs/account
     info:
         title: Account Service API
         version: 1.0.0

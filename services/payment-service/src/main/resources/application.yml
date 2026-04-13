@@ -25,6 +25,8 @@ spring:
         port: 5672
         username: guest
         password: guest
+    liquibase:
+        enabled: false
 
 account-service:
     url: http://localhost:8082
@@ -40,8 +42,8 @@ resilience4j:
                 registerHealthIndicator: true
 
 springdoc:
-    swagger-ui:
-        url: /v3/api-docs
+    api-docs:
+        path: /v3/api-docs/payment
     info:
         title: Payment Service API
         version: 1.0.0

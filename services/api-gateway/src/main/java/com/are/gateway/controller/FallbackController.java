@@ -8,7 +8,6 @@ import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Map;
 
 /**
  * Fallback controller for circuit breaker and timeout responses.

@@ -6,6 +6,8 @@ import lombok.EqualsAndHashCode;
 
 import java.math.BigDecimal;
 
+import org.hibernate.annotations.ColumnDefault;
+
 @Entity
 @Data
 @EqualsAndHashCode(callSuper = true)
@@ -23,9 +25,11 @@ public class AccountEntity extends BaseEntity {
     @Column(name = "account_name", nullable = false, length = 100)
     private String accountName;
 
+    @ColumnDefault("0.00")
     @Column(name = "balance", nullable = false, precision = 19, scale = 4)
     private BigDecimal balance = BigDecimal.ZERO;
 
+    @ColumnDefault("NGN")
     @Column(name = "currency", nullable = false, length = 3)
     private String currency = "NGN";
 
