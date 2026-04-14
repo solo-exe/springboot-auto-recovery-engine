@@ -23,6 +23,7 @@ public class UserEntity extends BaseEntity {
     @Column(name = "phone_number", length = 20, nullable = true)
     private String phoneNumber;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "status", length = 20, nullable = false)
     private UserStatus status = UserStatus.INACTIVE;
 

@@ -4,6 +4,7 @@ import com.are.account.dto.AccountResponse;
 import com.are.account.dto.BalanceUpdateRequest;
 import com.are.account.dto.CreateAccountRequest;
 import com.are.common.model.AccountStatus;
+import com.are.common.dto.ApiResponse;
 import com.are.account.service.AccountService;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
@@ -24,39 +25,41 @@ public class AccountController {
     }
 
     @PostMapping
-    public ResponseEntity<AccountResponse> createAccount(@Valid @RequestBody CreateAccountRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(accountService.createAccount(request));
+    public ResponseEntity<ApiResponse<AccountResponse>> createAccount(
+            @Valid @RequestBody CreateAccountRequest request) {
+        AccountResponse response = accountService.createAccount(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(response));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<AccountResponse> getAccount(@PathVariable Long id) {
-        return ResponseEntity.ok(accountService.getAccount(id));
+    public ResponseEntity<ApiResponse<AccountResponse>> getAccount(@PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.success(accountService.getAccount(id)));
     }
 
     @GetMapping
-    public ResponseEntity<Page<AccountResponse>> listAccounts(
+    public ResponseEntity<ApiResponse<Page<AccountResponse>>> listAccounts(
             @RequestParam(required = false) AccountStatus status,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        return ResponseEntity.ok(
-                accountService.listAccounts(status,
-                        PageRequest.of(page, size, Sort.by("createdAt").descending())));
+        Page<AccountResponse> response = accountService.listAccounts(status,
+                PageRequest.of(page, size, Sort.by("createdAt").descending()));
+        return ResponseEntity.ok(ApiResponse.success(response));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<AccountResponse> updateAccount(
+    public ResponseEntity<ApiResponse<AccountResponse>> updateAccount(
             @PathVariable Long id, @Valid @RequestBody CreateAccountRequest request) {
-        return ResponseEntity.ok(accountService.updateAccount(id, request));
+        return ResponseEntity.ok(ApiResponse.success(accountService.updateAccount(id, request)));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<AccountResponse> closeAccount(@PathVariable Long id) {
-        return ResponseEntity.ok(accountService.closeAccount(id));
+    public ResponseEntity<ApiResponse<AccountResponse>> closeAccount(@PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.success(accountService.closeAccount(id)));
     }
 
     @PutMapping("/{id}/balance")
-    public ResponseEntity<AccountResponse> updateBalance(
+    public ResponseEntity<ApiResponse<AccountResponse>> updateBalance(
             @PathVariable Long id, @Valid @RequestBody BalanceUpdateRequest request) {
-        return ResponseEntity.ok(accountService.updateBalance(id, request));
+        return ResponseEntity.ok(ApiResponse.success(accountService.updateBalance(id, request)));
     }
 }

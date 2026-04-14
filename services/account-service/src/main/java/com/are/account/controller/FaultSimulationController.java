@@ -1,7 +1,9 @@
 package com.are.account.controller;
 
+import com.are.common.dto.ApiResponse;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
@@ -26,29 +28,29 @@ public class FaultSimulationController {
 
     public FaultSimulationController(MeterRegistry meterRegistry) {
         // Register are.fault.active gauge
-        Gauge.builder("are.fault.active", this, ctrl ->
-                        (ctrl.simulateUnresponsive.get() || ctrl.errorRatePercent.get() > 0 ||
-                                ctrl.simulateMemoryLeak.get() || ctrl.simulateCpuSpike.get()) ? 1.0 : 0.0)
+        Gauge.builder("are.fault.active", this,
+                ctrl -> (ctrl.simulateUnresponsive.get() || ctrl.errorRatePercent.get() > 0 ||
+                        ctrl.simulateMemoryLeak.get() || ctrl.simulateCpuSpike.get()) ? 1.0 : 0.0)
                 .description("Whether any fault simulation is currently active")
                 .register(meterRegistry);
     }
 
     @PostMapping("/unresponsive")
-    public Map<String, Object> toggleUnresponsive(@RequestBody Map<String, Boolean> body) {
+    public ResponseEntity<ApiResponse<Map<String, Object>>> toggleUnresponsive(@RequestBody Map<String, Boolean> body) {
         boolean enable = body.getOrDefault("enable", false);
         simulateUnresponsive.set(enable);
-        return Map.of("fault", "unresponsive", "active", enable);
+        return ResponseEntity.ok(ApiResponse.success(Map.of("fault", "unresponsive", "active", enable)));
     }
 
     @PostMapping("/error-rate")
-    public Map<String, Object> setErrorRate(@RequestBody Map<String, Integer> body) {
+    public ResponseEntity<ApiResponse<Map<String, Object>>> setErrorRate(@RequestBody Map<String, Integer> body) {
         int rate = body.getOrDefault("rate", 0);
         errorRatePercent.set(rate);
-        return Map.of("fault", "error-rate", "rate", rate);
+        return ResponseEntity.ok(ApiResponse.success(Map.of("fault", "error-rate", "rate", rate)));
     }
 
     @PostMapping("/memory-leak")
-    public Map<String, Object> toggleMemoryLeak(@RequestBody Map<String, Boolean> body) {
+    public ResponseEntity<ApiResponse<Map<String, Object>>> toggleMemoryLeak(@RequestBody Map<String, Boolean> body) {
         boolean enable = body.getOrDefault("enable", false);
         simulateMemoryLeak.set(enable);
         if (enable) {
@@ -67,11 +69,11 @@ public class FaultSimulationController {
         } else {
             leakedMemory.clear();
         }
-        return Map.of("fault", "memory-leak", "active", enable);
+        return ResponseEntity.ok(ApiResponse.success(Map.of("fault", "memory-leak", "active", enable)));
     }
 
     @PostMapping("/cpu-spike")
-    public Map<String, Object> toggleCpuSpike(@RequestBody Map<String, Boolean> body) {
+    public ResponseEntity<ApiResponse<Map<String, Object>>> toggleCpuSpike(@RequestBody Map<String, Boolean> body) {
         boolean enable = body.getOrDefault("enable", false);
         simulateCpuSpike.set(enable);
         if (enable) {
@@ -84,7 +86,7 @@ public class FaultSimulationController {
                 });
             }
         }
-        return Map.of("fault", "cpu-spike", "active", enable);
+        return ResponseEntity.ok(ApiResponse.success(Map.of("fault", "cpu-spike", "active", enable)));
     }
 
     // --- Accessors for FaultInterceptor ---

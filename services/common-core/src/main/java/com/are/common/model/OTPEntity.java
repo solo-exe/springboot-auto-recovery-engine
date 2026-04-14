@@ -19,6 +19,12 @@ public class OTPEntity extends BaseEntity {
     @Column(name = "otp", nullable = false)
     private String otp;
 
+    @Column(name = "email", nullable = true)
+    private String email;
+
+    @Column(name = "phone_number", nullable = true)
+    private String phoneNumber;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "recipient", nullable = false)
     private OTPRecipient recipient;

@@ -1,0 +1,22 @@
+databaseChangeLog:
+- changeSet:
+    id: 1776093282298-1
+    author: solomon (generated)
+    changes:
+    - addColumn:
+        columns:
+        - column:
+            name: email
+            type: VARCHAR(255)
+        tableName: otps
+- changeSet:
+    id: 1776093282298-2
+    author: solomon (generated)
+    changes:
+    - addColumn:
+        columns:
+        - column:
+            name: phone_number
+            type: VARCHAR(255)
+        tableName: otps
+

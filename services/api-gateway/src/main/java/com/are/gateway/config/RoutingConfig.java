@@ -16,25 +16,6 @@ public class RoutingConfig {
                                                 .path("/api/accounts/auth/**")
                                                 .filters(f -> f.stripPrefix(2))
                                                 .uri("http://localhost:8082"))
-
-                                // Profile routes (JWT required)
-                                .route("account-profile-route", r -> r
-                                                .path("/api/accounts/me/**")
-                                                .filters(f -> f.stripPrefix(2))
-                                                .uri("http://localhost:8082"))
-
-                                // Account management routes (JWT required)
-                                .route("account-route", r -> r
-                                                .path("/api/accounts/**")
-                                                .filters(f -> f.stripPrefix(1))
-                                                .uri("http://localhost:8082"))
-
-                                // Payment routes (JWT required)
-                                .route("payment-route", r -> r
-                                                .path("/api/payments/**")
-                                                .filters(f -> f.stripPrefix(1))
-                                                .uri("http://localhost:8081"))
-
                                 // Notification routes (public)
                                 .route("notification-route", r -> r
                                                 .path("/notifications/**")
@@ -61,6 +42,25 @@ public class RoutingConfig {
                                                 .filters(f -> f.rewritePath("/fault/notification/(?<path>.*)",
                                                                 "/fault/${path}"))
                                                 .uri("http://localhost:8085"))
+
+                                // _______________________________________________________________________
+                                // Profile routes (JWT required)
+                                .route("account-profile-route", r -> r
+                                                .path("/api/accounts/me/**")
+                                                .filters(f -> f.stripPrefix(2))
+                                                .uri("http://localhost:8082"))
+
+                                // Account management routes (JWT required)
+                                .route("account-route", r -> r
+                                                .path("/api/accounts/**")
+                                                .filters(f -> f.stripPrefix(1))
+                                                .uri("http://localhost:8082"))
+
+                                // Payment routes (JWT required)
+                                .route("payment-route", r -> r
+                                                .path("/api/payments/**")
+                                                .filters(f -> f.stripPrefix(1))
+                                                .uri("http://localhost:8081"))
 
                                 // Swagger UI routes
                                 .route("account-swagger-ui", r -> r

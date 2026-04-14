@@ -17,7 +17,19 @@ spring:
             - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
             - org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
             - org.springframework.boot.autoconfigure.mail.MailSenderAutoConfiguration
-
+    mail:
+        host: ${MAIL_HOST:smtp.gmail.com}
+        port: ${MAIL_PORT:587}
+        username: ${MAIL_USERNAME:solomonabu90@gmail.com}
+        password: ${MAIL_PASSWORD}
+        properties:
+            mail:
+                smtp:
+                auth: ${MAIL_SMTP_AUTH:true}
+                starttls:
+                    enable: ${MAIL_SMTP_STARTTLS_ENABLE:true}
+                    required: true
+                    
 management:
     endpoints:
         web:

@@ -484,7 +484,13 @@ resilience4j.circuitbreaker.instances.accountServiceCB:
 - From address: `${spring.mail.username:donotreply@are.example}`.
 - Mail config uses env vars: `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`.
 
-#### Key Detail
+@contextScopeItemMention 
+The content in thautonomoslyument was defined in order to specify what needs to be completed on this project. 
+The api-gateway, account service, and payment-serice have be done to a large extent. The nofication service was not completed in total
+
+I want you to look into what is missing in the notification service, and according to what is specifies and implement the functionality.
+
+Ensure you test autonomosly, generate a report and give me a step by step document detailing how I can test, based on what exists from the api-gateway, account service, payment-service, and notification service#### Key Detail
 This service has **no database dependency** — it is purely a message consumer and email sender. It does not depend on `common-core` in its `pom.xml`.
 
 ---

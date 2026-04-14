@@ -1,0 +1,10 @@
+databaseChangeLog:
+- changeSet:
+    id: 1776097750748-1
+    author: solomon (generated)
+    changes:
+    - modifyDataType:
+        columnName: status
+        newDataType: varchar(20)
+        tableName: users
+

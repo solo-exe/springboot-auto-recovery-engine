@@ -41,8 +41,6 @@ public class AccountService {
         AccountEntity account = new AccountEntity();
         account.setAccountNumber(generateAccountNumber());
         account.setAccountName(request.ownerName());
-        // account.setEmail(request.email()); // TODO: user relation
-        // account.setPhoneNumber(request.phoneNumber()); // TODO: user relation
         account.setStatus(AccountStatus.ACTIVE);
 
         account = accountRepository.save(account);
@@ -145,10 +143,6 @@ public class AccountService {
         transactionRepository.save(txn);
     }
 
-    private String generateAccountNumber() {
-        return "ARE" + System.currentTimeMillis() % 10000000000L;
-    }
-
     private AccountResponse toResponse(AccountEntity a) {
         return new AccountResponse(
                 a.getId(),
@@ -161,5 +155,9 @@ public class AccountService {
                 a.getUser() != null ? a.getUser().getPhoneNumber() : null,
                 a.getCreatedAt(),
                 a.getUpdatedAt());
+    }
+
+    String generateAccountNumber() {
+        return "ARE" + String.valueOf(System.currentTimeMillis() % 1_000_000_000L);
     }
 }

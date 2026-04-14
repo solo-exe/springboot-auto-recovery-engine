@@ -1,5 +1,6 @@
 package com.are.account.controller;
 
+import com.are.common.dto.ApiResponse;
 import com.are.common.model.TransactionEntity;
 import com.are.account.service.TransactionService;
 import org.springframework.data.domain.Page;
@@ -23,23 +24,22 @@ public class TransactionController {
     }
 
     @GetMapping
-    public ResponseEntity<Page<TransactionEntity>> getTransactions(
+    public ResponseEntity<ApiResponse<Page<TransactionEntity>>> getTransactions(
             @PathVariable Long accountId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime from,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime to,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        return ResponseEntity.ok(
-                transactionService.getTransactions(accountId, from, to,
-                        PageRequest.of(page, size, Sort.by("createdAt").descending())));
+        Page<TransactionEntity> response = transactionService.getTransactions(accountId, from, to,
+                PageRequest.of(page, size, Sort.by("createdAt").descending()));
+        return ResponseEntity.ok(ApiResponse.success(response));
     }
 
     @GetMapping("/summary")
-    public ResponseEntity<Map<String, Object>> getTransactionSummary(
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getTransactionSummary(
             @PathVariable Long accountId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime from,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime to) {
-        return ResponseEntity.ok(
-                transactionService.getTransactionSummary(accountId, from, to));
+        return ResponseEntity.ok(ApiResponse.success(transactionService.getTransactionSummary(accountId, from, to)));
     }
 }
