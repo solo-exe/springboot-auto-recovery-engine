@@ -1,11 +1,9 @@
 package com.are.account.controller;
 
-import com.are.account.dto.FundRequest;
 import com.are.account.dto.ProfileResponse;
 import com.are.account.service.ProfileService;
 import com.are.common.dto.ApiResponse;
 import com.are.common.model.TransactionEntity;
-import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;

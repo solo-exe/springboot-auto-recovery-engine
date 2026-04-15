@@ -24,15 +24,6 @@ public class AuthController {
         this.authService = authService;
     }
 
-    // @PostMapping("/register")
-    // public ResponseEntity<ApiResponse<RegisterResponse>> register(
-    // @Valid @RequestBody RegisterRequest request) {
-    // RegisterResponse response = authService.register(request);
-    // return ResponseEntity.status(HttpStatus.CREATED)
-    // .body(ApiResponse.success(response, "Registration successful. Check logs for
-    // OTP."));
-    // }
-
     @PostMapping("/verify-otp")
     public ResponseEntity<ApiResponse<OtpVerifyResponse>> verifyOtp(
             @Valid @RequestBody VerifyOtpRequest request) {
