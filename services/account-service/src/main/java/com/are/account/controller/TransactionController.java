@@ -25,13 +25,22 @@ public class TransactionController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<Page<TransactionEntity>>> getTransactions(
-            @PathVariable Long accountId,
+            @PathVariable String accountId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime from,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime to,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        Page<TransactionEntity> response = transactionService.getTransactions(accountId, from, to,
-                PageRequest.of(page, size, Sort.by("createdAt").descending()));
+
+        System.out.println("accountId: " + accountId);
+        System.out.println("from: " + from);
+        System.out.println("to: " + to);
+        System.out.println("page: " + page);
+        System.out.println("size: " + size);
+
+        Page<TransactionEntity> response = transactionService.getTransactions(Long.valueOf(accountId), from, to,
+                PageRequest.of(page, size
+                // , Sort.by("createdAt").descending()
+                ));
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 

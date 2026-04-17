@@ -1,0 +1,64 @@
+# =============================================================================
+# Promtail Configuration — Docker Log Scraper
+# =============================================================================
+# Scrapes container logs via the Docker socket and forwards structured JSON
+# logs to Loki. Extracts metadata fields (level, correlationId, serviceName)
+# from the LogstashEncoder JSON output used by all ARE microservices.
+# =============================================================================
+
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+
+positions:
+  filename: /tmp/positions.yaml
+
+clients:
+  - url: http://loki:3100/loki/api/v1/push
+
+scrape_configs:
+  - job_name: docker
+    docker_sd_configs:
+      - host: unix:///var/run/docker.sock
+        refresh_interval: 5s
+        filters:
+          - name: label
+            values: ["com.docker.compose.project=auto-recovery-engine"]
+    relabel_configs:
+      # Use the container name as the primary label
+      - source_labels: ['__meta_docker_container_name']
+        regex: '/(.*)'
+        target_label: 'container_name'
+      # Extract the compose service name
+      - source_labels: ['__meta_docker_container_label_com_docker_compose_service']
+        target_label: 'compose_service'
+      # Tag with the Docker Compose project
+      - source_labels: ['__meta_docker_container_label_com_docker_compose_project']
+        target_label: 'compose_project'
+    pipeline_stages:
+      # Docker wraps logs in a JSON envelope — unwrap it first
+      - docker: {}
+      # Try to parse the log line as JSON (LogstashEncoder output)
+      - json:
+          expressions:
+            level: level
+            logger: logger_name
+            message: message
+            correlationId: correlationId
+            service: service
+            thread: thread_name
+            timestamp: '"@timestamp"'
+      # Promote key fields to Loki labels for fast querying
+      - labels:
+          level:
+          service:
+      # Use the original timestamp from the log event
+      - timestamp:
+          source: timestamp
+          format: RFC3339Nano
+          fallback_formats:
+            - RFC3339
+            - "2006-01-02T15:04:05.000Z"
+      # Format the output to include the parsed message
+      - output:
+          source: message

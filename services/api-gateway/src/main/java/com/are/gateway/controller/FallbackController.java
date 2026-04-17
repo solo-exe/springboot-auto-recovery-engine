@@ -1,5 +1,7 @@
 package com.are.gateway.controller;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -15,8 +17,12 @@ import java.nio.charset.StandardCharsets;
 @RestController
 public class FallbackController {
 
+    private static final Logger log = LoggerFactory.getLogger(FallbackController.class);
+
     @GetMapping("/fallback")
     public Mono<Void> fallback(ServerWebExchange exchange) {
+        log.warn("CIRCUIT BREAKER TRIGGERED: Executing API Gateway fallback for path {}", 
+                 exchange.getRequest().getPath());
         exchange.getResponse().setStatusCode(HttpStatus.SERVICE_UNAVAILABLE);
         exchange.getResponse().getHeaders().setContentType(MediaType.APPLICATION_JSON);
         String body = "{\"success\":false,\"data\":null,\"message\":\"Service temporarily unavailable\"}";

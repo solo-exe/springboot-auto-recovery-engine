@@ -1,0 +1,45 @@
+# =============================================================================
+# Alertmanager Configuration — ARE Observability
+# =============================================================================
+# Routes Prometheus alerts. Currently configured with a webhook receiver
+# placeholder for the future recovery engine to consume, and a log receiver
+# that simply logs alerts to stdout for development visibility.
+# =============================================================================
+
+global:
+  resolve_timeout: 5m
+
+route:
+  group_by: ['alertname', 'job', 'application']
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+  receiver: 'log-receiver'
+
+  routes:
+    # Critical alerts (ServiceDown, CircuitBreakerOpen) route to webhook
+    - match:
+        severity: critical
+      receiver: 'recovery-webhook'
+      group_wait: 10s
+      repeat_interval: 1m
+
+receivers:
+  # Default receiver — logs to Alertmanager stdout
+  - name: 'log-receiver'
+
+  # Webhook receiver — placeholder for the recovery engine
+  # The recovery engine will listen on this URL to receive alert payloads
+  - name: 'recovery-webhook'
+    webhook_configs:
+      - url: 'http://recovery-engine:8090/api/alerts'
+        send_resolved: true
+        max_alerts: 0
+
+inhibit_rules:
+  # If a service is down, suppress error rate and latency alerts for it
+  - source_match:
+      alertname: 'ServiceDown'
+    target_match_re:
+      alertname: 'HighErrorRate|HighLatency'
+    equal: ['job']

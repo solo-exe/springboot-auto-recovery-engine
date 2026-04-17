@@ -1,5 +1,6 @@
 server:
     port: 8085
+    forward-headers-strategy: framework
 
 spring:
     application:
@@ -45,9 +46,13 @@ management:
             application: notification-worker
 
 springdoc:
-    swagger-ui:
-        url: /v3/api-docs
+    api-docs:
+        path: /v3/api-docs/notification
+    openapi:
+        servers:
+            - url: http://localhost:8080
+              description: API Gateway
     info:
         title: Notification Worker API
         version: 1.0.0
-        description: API for notification services.
+        description: API for managing notification workers.

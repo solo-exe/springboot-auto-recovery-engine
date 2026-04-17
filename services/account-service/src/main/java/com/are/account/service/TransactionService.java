@@ -24,12 +24,18 @@ public class TransactionService {
         this.transactionRepository = transactionRepository;
     }
 
-    public Page<TransactionEntity> getTransactions(Long accountId, LocalDateTime from, LocalDateTime to,
+    public Page<TransactionEntity> getTransactions(
+            Long accountId,
+            LocalDateTime from,
+            LocalDateTime to,
             Pageable pageable) {
         if (from != null && to != null) {
+            System.out.println("THIS RUNS ");
             return transactionRepository.findByAccountIdAndCreatedAtBetween(accountId, from, to, pageable);
+        } else {
+            System.out.println("THIS RUNS INSTEAD");
+            return transactionRepository.findByAccountId(accountId, pageable);
         }
-        return transactionRepository.findByAccountId(accountId, pageable);
     }
 
     public Map<String, Object> getTransactionSummary(Long accountId, LocalDateTime from, LocalDateTime to) {

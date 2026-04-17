@@ -1,5 +1,6 @@
 server:
     port: 8082
+    forward-headers-strategy: framework
 
 spring:
     application:
@@ -35,6 +36,10 @@ jwt:
 springdoc:
     api-docs:
         path: /v3/api-docs/account
+    openapi:
+        servers:
+            - url: http://localhost:8080/api
+              description: API Gateway
     info:
         title: Account Service API
         version: 1.0.0

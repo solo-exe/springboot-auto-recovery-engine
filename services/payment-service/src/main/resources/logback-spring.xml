@@ -1,7 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
     <springProperty name="applicationName" source="spring.application.name" defaultValue="unknown"/>
-    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+
+    <!-- Standard Console Appender (Human Readable) -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} %magenta([%thread]) %highlight(%-5level) %cyan(%logger{36}) - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- Logstash Appender (JSON for log aggregation) -->
+    <appender name="LOGSTASH" class="ch.qos.logback.core.ConsoleAppender">
         <encoder class="net.logstash.logback.encoder.LogstashEncoder">
             <includeMdcKeyName>correlationId</includeMdcKeyName>
             <includeMdcKeyName>serviceName</includeMdcKeyName>
@@ -9,21 +18,21 @@
         </encoder>
     </appender>
 
-    <!-- Suppress verbose Spring Framework logs -->
+    <!-- Suppress verbose logs -->
     <logger name="org.springframework" level="WARN"/>
-    <logger name="org.springframework.boot" level="WARN"/>
-    <logger name="org.springframework.cloud" level="WARN"/>
-    <logger name="org.springframework.web" level="WARN"/>
     <logger name="org.hibernate" level="WARN"/>
     <logger name="org.postgresql" level="WARN"/>
-    <logger name="com.zaxxer.hikari" level="WARN"/>
-    <logger name="io.netty" level="WARN"/>
-    
-    <!-- Show your application logs at INFO level -->
     <logger name="com.are" level="INFO"/>
 
-    <!-- Root logger - catches everything else -->
-    <root level="WARN">
-        <appender-ref ref="STDOUT"/>
-    </root>
+    <springProfile name="default | local">
+        <root level="INFO">
+            <appender-ref ref="CONSOLE"/>
+        </root>
+    </springProfile>
+
+    <springProfile name="!default &amp; !local">
+        <root level="INFO">
+            <appender-ref ref="LOGSTASH"/>
+        </root>
+    </springProfile>
 </configuration>

@@ -1,5 +1,6 @@
 server:
     port: 8081
+    forward-headers-strategy: framework
 
 spring:
     application:
@@ -44,6 +45,10 @@ resilience4j:
 springdoc:
     api-docs:
         path: /v3/api-docs/payment
+    openapi:
+        servers:
+            - url: http://localhost:8080/api
+              description: API Gateway
     info:
         title: Payment Service API
         version: 1.0.0

@@ -1,34 +1,10 @@
+services:
+  account-uri: http://account-service:8082
+  payment-uri: http://payment-service:8081
+  notification-uri: http://notification-worker:8085
+
 spring:
   datasource:
     url: jdbc:postgresql://postgres:5432/are_db
   rabbitmq:
     host: rabbitmq
-  cloud:
-    gateway:
-      routes:
-        - id: account-auth-route
-          uri: http://account-service:8082
-          predicates:
-            - Path=/api/accounts/auth/**
-          filters:
-            - StripPrefix=1
-        - id: account-route
-          uri: http://account-service:8082
-          predicates:
-            - Path=/api/accounts/**
-          filters:
-            - StripPrefix=1
-        - id: payment-route
-          uri: http://payment-service:8081
-          predicates:
-            - Path=/api/payments/**
-          filters:
-            - StripPrefix=1
-        - id: internal-route
-          uri: http://account-service:8082
-          predicates:
-            - Path=/internal/**
-        - id: notification-route
-          uri: http://notification-worker:8085
-          predicates:
-            - Path=/notifications/**

@@ -42,6 +42,7 @@
         <logstash-encoder.version>8.0</logstash-encoder.version>
         <jjwt.version>0.12.6</jjwt.version>
         <springdoc.version>2.8.5</springdoc.version>
+        <jackson-hibernate.version>2.18.2</jackson-hibernate.version>
    
     </properties>
 
@@ -55,10 +56,15 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+            <!-- Hibernate Jackson Module -->
+            <dependency>
+                <groupId>com.fasterxml.jackson.datatype</groupId>
+                <artifactId>jackson-datatype-hibernate6</artifactId>
+                <version>${jackson-hibernate.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
-    <!-- Common dependencies inherited by ALL child modules -->
     <dependencies>
         <dependency>
             <groupId>org.springframework.boot</groupId>
