@@ -1,0 +1,61 @@
+server:
+  port: 8087
+
+spring:
+  application:
+    name: recovery-engine
+  boot:
+    admin:
+        client:
+            url: http://localhost:8086
+  profiles:
+    include: recovery-matrix
+
+  datasource:
+      url: jdbc:postgresql://localhost:5432/are_db
+      username: are_user
+      password: are_password
+      hikari:
+          maximum-pool-size: 10
+          minimum-idle: 2
+          connection-timeout: 5000
+          leak-detection-threshold: 10000
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "health,prometheus,metrics,info"
+  endpoint:
+    health:
+      show-details: always
+
+# Default threshold configurations (these will be mapped by ConfigurationProperties)
+recovery:
+  matrix:
+    - fault: Service Crash
+      signal: HTTP 5xx rate spike
+      primary-action: RESTART
+      threshold: 1
+      window: 30s
+    - fault: High Error Rate
+      signal: HTTP 5xx rate > 10%
+      primary-action: CIRCUIT_BREAKER_OPEN
+      secondary-action: REROUTE_TRAFFIC
+      threshold: 0.1
+      window: 120s
+    - fault: Response Time Degradation
+      signal: p95 latency > 2s
+      primary-action: CIRCUIT_BREAKER_HALF_OPEN
+      threshold: 2000
+      window: 180s
+    - fault: Connection Pool Exhaustion
+      signal: HikariCP pending threads
+      primary-action: POOL_RESET
+      threshold: 5
+      window: 60s
+    - fault: Cascading Failure
+      signal: Multi-service alert
+      primary-action: CASCADING_RECOVERY
+      threshold: 2
+      window: 60s

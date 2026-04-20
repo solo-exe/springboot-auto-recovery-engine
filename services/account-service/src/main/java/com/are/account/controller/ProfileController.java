@@ -1,9 +1,14 @@
 package com.are.account.controller;
 
+import com.are.account.dto.AccountResponse;
 import com.are.account.dto.ProfileResponse;
+import com.are.account.service.AccountService;
 import com.are.account.service.ProfileService;
 import com.are.common.dto.ApiResponse;
 import com.are.common.model.TransactionEntity;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -18,10 +23,14 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/me")
 public class ProfileController {
 
-    private final ProfileService profileService;
+    private static final Logger log = LoggerFactory.getLogger(ProfileController.class);
 
-    public ProfileController(ProfileService profileService) {
+    private final ProfileService profileService;
+    private final AccountService accountService;
+
+    public ProfileController(ProfileService profileService, AccountService accountService) {
         this.profileService = profileService;
+        this.accountService = accountService;
     }
 
     @GetMapping
@@ -39,5 +48,11 @@ public class ProfileController {
         Page<TransactionEntity> transactions = profileService.getTransactions(userId,
                 PageRequest.of(page, size, Sort.by("createdAt").descending()));
         return ResponseEntity.ok(ApiResponse.success(transactions));
+    }
+
+    @GetMapping("/account")
+    public ResponseEntity<ApiResponse<AccountResponse>> getMyAccount() {
+        log.debug("Fetching authenticated user's account details");
+        return ResponseEntity.ok(ApiResponse.success(accountService.getMyAccount()));
     }
 }

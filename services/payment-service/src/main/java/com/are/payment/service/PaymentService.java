@@ -1,5 +1,8 @@
 package com.are.payment.service;
 
+import java.time.LocalDateTime;
+import java.util.*;
+
 import com.are.payment.config.RabbitConfig;
 import com.are.payment.dto.InitiatePaymentRequest;
 import com.are.payment.dto.PaymentResponse;
@@ -19,9 +22,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
+import com.are.common.security.UserContext;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.UUID;
 
@@ -39,8 +42,8 @@ public class PaymentService {
     private final RabbitTemplate rabbitTemplate;
 
     public PaymentService(PaymentRepository paymentRepository,
-                          WebClient accountServiceWebClient,
-                          RabbitTemplate rabbitTemplate) {
+            WebClient accountServiceWebClient,
+            RabbitTemplate rabbitTemplate) {
         this.paymentRepository = paymentRepository;
         this.accountServiceWebClient = accountServiceWebClient;
         this.rabbitTemplate = rabbitTemplate;
@@ -48,7 +51,8 @@ public class PaymentService {
 
     @Transactional
     @CircuitBreaker(name = "accountServiceCB", fallbackMethod = "initiatePaymentFallback")
-    public PaymentResponse initiatePayment(Long userId, InitiatePaymentRequest request) {
+    public PaymentResponse initiatePayment(InitiatePaymentRequest request) {
+        Long userId = UserContext.getUserId();
         log.info("Initiating payment for user {}: {} to {}",
                 userId, request.amount(), request.destinationAccountNumber());
 
@@ -56,6 +60,7 @@ public class PaymentService {
         Map<String, Object> accountData = getInternalAccount(userId);
         Long sourceAccountId = ((Number) accountData.get("accountId")).longValue();
         String sourceAccountNumber = (String) accountData.get("accountNumber");
+        String customerEmail = (String) accountData.get("email");
         BigDecimal balance = new BigDecimal(accountData.get("balance").toString());
         String status = accountData.get("status").toString();
 
@@ -91,7 +96,7 @@ public class PaymentService {
             log.info("Payment {} completed successfully", payment.getId());
 
             // Step 6: Publish event to RabbitMQ
-            publishPaymentEvent(payment, sourceAccountNumber, request.destinationAccountNumber());
+            publishPaymentEvent(payment, sourceAccountNumber, request.destinationAccountNumber(), customerEmail);
 
             return toResponse(payment);
 
@@ -109,9 +114,9 @@ public class PaymentService {
         }
     }
 
-    @SuppressWarnings("unused")
-    public PaymentResponse initiatePaymentFallback(Long userId, InitiatePaymentRequest request, Throwable t) {
-        log.warn("Circuit breaker open — payment fallback: {}", t.getMessage());
+    public PaymentResponse initiatePaymentFallback(InitiatePaymentRequest request, Throwable t) {
+        Long userId = UserContext.getUserId();
+        log.warn("Circuit breaker open — payment fallback for user {}: {}", userId, t.getMessage());
         PaymentEntity payment = new PaymentEntity();
         payment.setFromAccountId(0L);
         payment.setToAccountId(0L);
@@ -125,7 +130,8 @@ public class PaymentService {
         return toResponse(payment);
     }
 
-    public PaymentResponse getPayment(Long userId, Long paymentId) {
+    public PaymentResponse getPayment(Long paymentId) {
+        Long userId = UserContext.getUserId();
         PaymentEntity payment = paymentRepository.findById(paymentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Payment not found: " + paymentId));
 
@@ -139,7 +145,8 @@ public class PaymentService {
         return toResponse(payment);
     }
 
-    public Page<PaymentResponse> getPaymentHistory(Long userId, Pageable pageable) {
+    public Page<PaymentResponse> getPaymentHistory(Pageable pageable) {
+        Long userId = UserContext.getUserId();
         Map<String, Object> accountData = getInternalAccount(userId);
         Long accountId = ((Number) accountData.get("accountId")).longValue();
         return paymentRepository.findByFromAccountId(accountId, pageable).map(this::toResponse);
@@ -174,21 +181,23 @@ public class PaymentService {
     }
 
     private void publishPaymentEvent(PaymentEntity payment, String sourceAccountNumber,
-                                      String destinationAccountNumber) {
+            String destinationAccountNumber, String customerEmail) {
         try {
-            Map<String, Object> event = Map.of(
-                    "paymentId", payment.getId(),
-                    "sourceAccountId", payment.getFromAccountId(),
-                    "destinationAccountNumber", destinationAccountNumber,
-                    "amount", payment.getAmount(),
-                    "reference", payment.getReference(),
-                    "timestamp", LocalDateTime.now().toString(),
-                    "correlationId", payment.getCorrelationId() != null ? payment.getCorrelationId() : "");
+            Map<String, Object> event = new HashMap<>();
+            event.put("paymentId", payment.getId());
+            event.put("sourceAccountId", payment.getFromAccountId());
+            event.put("destinationAccountNumber", destinationAccountNumber);
+            event.put("amount", payment.getAmount());
+            event.put("reference", payment.getReference());
+            event.put("customerEmail", customerEmail);
+            event.put("timestamp", LocalDateTime.now().toString());
+            event.put("correlationId", payment.getCorrelationId() != null ? payment.getCorrelationId() : "");
+
             rabbitTemplate.convertAndSend(
                     RabbitConfig.PAYMENT_EXCHANGE,
                     RabbitConfig.PAYMENT_COMPLETED_ROUTING_KEY,
                     event);
-            log.info("Payment event published for payment {}", payment.getId());
+            log.info("Payment event published for payment {} (email: {})", payment.getId(), customerEmail);
         } catch (Exception e) {
             log.warn("Failed to publish payment event for {}: {}", payment.getId(), e.getMessage());
         }

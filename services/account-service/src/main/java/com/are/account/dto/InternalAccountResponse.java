@@ -7,5 +7,6 @@ public record InternalAccountResponse(
         Long accountId,
         String accountNumber,
         BigDecimal balance,
-        AccountStatus status) {
+        AccountStatus status,
+        String email) {
 }

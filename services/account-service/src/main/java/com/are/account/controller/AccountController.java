@@ -28,15 +28,6 @@ public class AccountController {
         this.accountService = accountService;
     }
 
-    @PostMapping
-    public ResponseEntity<ApiResponse<AccountResponse>> createAccount(
-            @Valid @RequestBody CreateAccountRequest request) {
-        log.info("Received request to create account for user email: {}", request.email());
-        AccountResponse response = accountService.createAccount(request);
-        log.info("Successfully created account with ID: {}", response.id());
-        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(response));
-    }
-
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<AccountResponse>> getAccount(@PathVariable Long id) {
         log.debug("Fetching account with ID: {}", id);

@@ -9,6 +9,8 @@ COPY services/api-gateway/pom.xml services/api-gateway/pom.xml
 COPY services/payment-service/pom.xml services/payment-service/pom.xml
 COPY services/account-service/pom.xml services/account-service/pom.xml
 COPY services/notification-worker/pom.xml services/notification-worker/pom.xml
+COPY services/spring-boot-admin/pom.xml services/spring-boot-admin/pom.xml
+COPY services/recovery-engine/pom.xml services/recovery-engine/pom.xml
 
 # Copy source code for the service and its dependencies
 COPY services/common-core/src services/common-core/src

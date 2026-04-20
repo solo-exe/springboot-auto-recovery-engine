@@ -77,7 +77,8 @@ public class InternalAccountService {
                 a.getId(),
                 a.getAccountNumber(),
                 a.getBalance(),
-                a.getStatus()
+                a.getStatus(),
+                a.getUser() != null ? a.getUser().getEmail() : null
         );
     }
 }

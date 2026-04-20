@@ -27,6 +27,7 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
     private final SecretKey secretKey;
 
     private static final List<String> PUBLIC_PATHS = List.of(
+            "/auth/",
             "/api/accounts/auth/",
             "/internal/",
             "/actuator",
@@ -67,6 +68,8 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
 
             String userId = claims.getSubject();
             String role = claims.get("role", String.class);
+
+            System.out.println("JwtAuthFilter: Injecting headers -> X-User-Id: " + userId + ", X-User-Role: " + role);
 
             // Add user info to request headers for downstream services
             exchange = exchange.mutate()

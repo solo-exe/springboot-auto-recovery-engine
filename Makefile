@@ -1,4 +1,4 @@
-.PHONY: build start-gateway start-payment start-account make-migrations migrate rollback compose-up compose-down clean
+.PHONY: build start-gateway start-payment start-account start-notif start-recovery start-admin launch make-migrations migrate migrate-diff migrate-run migrate-rollback rollback infra-compose-up compose-up compose-down compose-logs clean
 
 # Variables
 MVN = mvn
@@ -48,6 +48,12 @@ migrate-rollback:
 # Docker / Infrastructure Commands
 # ----------------------------------------
 
+infra-compose-up:
+	docker-compose up -d postgres rabbitmq
+
+infra-compose-down:
+	docker-compose down postgres rabbitmq
+
 # Start all infrastructure (Postgres, Prometheus, Grafana, etc.) in the background
 compose-up:
 	docker-compose up -d
@@ -59,6 +65,11 @@ compose-down:
 # View logs for Docker infrastructure
 compose-logs:
 	docker-compose logs -f
+
+# 🚀 Launch the entire system (Docker tiers + Java services in separate terminals)
+launch:
+	@chmod +x scripts/launch_system.sh
+	@./scripts/launch_system.sh
 
 # ----------------------------------------
 # Local Microservice Run Commands 
@@ -79,3 +90,11 @@ start-account:
 # Run the Account Service locally
 start-notif:
 	$(MVN) spring-boot:run -pl services/notification-worker # 2>&1 | grep -v "WARNING:"
+
+# Run the Recovery Engine locally
+start-recovery:
+	$(MVN) spring-boot:run -pl services/recovery-engine # 2>&1 | grep -v "WARNING:"
+
+# Run the Spring Boot Admin locally
+start-admin:
+	$(MVN) spring-boot:run -pl services/spring-boot-admin # 2>&1 | grep -v "WARNING:"

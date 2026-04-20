@@ -97,6 +97,18 @@ public class FaultSimulationController {
         return ResponseEntity.ok(ApiResponse.success(Map.of("fault", "cpu-spike", "active", enable)));
     }
 
+    @PostMapping("/crash")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> triggerCrash() {
+        log.warn("FAULT_SIMULATION: Crash simulation activated. Shutting down JVM...");
+        Thread.ofVirtual().name("crash-sim").start(() -> {
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {}
+            System.exit(1);
+        });
+        return ResponseEntity.ok(ApiResponse.success(Map.of("fault", "crash", "action", "System.exit(1) initiated")));
+    }
+
     // --- Accessors for FaultInterceptor ---
 
     public boolean isUnresponsive() {

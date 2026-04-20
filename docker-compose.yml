@@ -123,7 +123,7 @@ services:
       GF_USERS_ALLOW_SIGN_UP: "false"
     volumes:
       - ./config/grafana/provisioning:/etc/grafana/provisioning
-      - ./config/grafana/dashboards:/var/lib/grafana/dashboards
+      - ./config/grafana/dashboards:/etc/grafana/dashboards
       - grafana_data:/var/lib/grafana
     depends_on:
       - prometheus
@@ -166,6 +166,7 @@ services:
     environment:
       SPRING_PROFILES_ACTIVE: docker
       JWT_SECRET: auto-recovery-engine-secret-key-for-jwt-token-signing-256bit
+      SPRING_BOOT_ADMIN_CLIENT_URL: http://are-spring-boot-admin:8086
     depends_on:
       postgres:
         condition: service_healthy
@@ -196,6 +197,7 @@ services:
     environment:
       SPRING_PROFILES_ACTIVE: docker
       JWT_SECRET: auto-recovery-engine-secret-key-for-jwt-token-signing-256bit
+      SPRING_BOOT_ADMIN_CLIENT_URL: http://are-spring-boot-admin:8086
     depends_on:
       postgres:
         condition: service_healthy
@@ -225,6 +227,7 @@ services:
       - "8085:8085"
     environment:
       SPRING_PROFILES_ACTIVE: docker
+      SPRING_BOOT_ADMIN_CLIENT_URL: http://are-spring-boot-admin:8086
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -253,9 +256,56 @@ services:
     environment:
       SPRING_PROFILES_ACTIVE: docker
       JWT_SECRET: auto-recovery-engine-secret-key-for-jwt-token-signing-256bit
+      SPRING_BOOT_ADMIN_CLIENT_URL: http://are-spring-boot-admin:8086
     depends_on:
       - payment-service
       - account-service
+    networks:
+      - are-network
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+        tag: "{{.Name}}"
+
+  spring-boot-admin:
+    build:
+      context: .
+      dockerfile: services/spring-boot-admin/Dockerfile
+    container_name: are-spring-boot-admin
+    ports:
+      - "8086:8086"
+    networks:
+      - are-network
+    restart: always
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+
+  recovery-engine:
+    build:
+      context: .
+      dockerfile: services/recovery-engine/Dockerfile
+    container_name: are-recovery-engine
+    ports:
+      - "8087:8087"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_BOOT_ADMIN_CLIENT_URL: http://are-spring-boot-admin:8086
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     networks:
       - are-network
     restart: always

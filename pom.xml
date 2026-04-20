@@ -25,6 +25,8 @@
         <module>services/payment-service</module>
         <module>services/account-service</module>
         <module>services/notification-worker</module>
+        <module>services/spring-boot-admin</module>
+        <module>services/recovery-engine</module>
     </modules>
 
     <properties>
@@ -43,6 +45,7 @@
         <jjwt.version>0.12.6</jjwt.version>
         <springdoc.version>2.8.5</springdoc.version>
         <jackson-hibernate.version>2.18.2</jackson-hibernate.version>
+        <postgresql.version>42.7.2</postgresql.version>
    
     </properties>
 
@@ -61,6 +64,12 @@
                 <groupId>com.fasterxml.jackson.datatype</groupId>
                 <artifactId>jackson-datatype-hibernate6</artifactId>
                 <version>${jackson-hibernate.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.postgresql</groupId>
+                <artifactId>postgresql</artifactId>
+                <version>${postgresql.version}</version>
+                <scope>runtime</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -94,6 +103,30 @@
             <artifactId>spring-boot-devtools</artifactId>
             <optional>true</optional>
         </dependency>
+        <!-- Fix Netty DNS warning on MacOS -->
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-resolver-dns-native-macos</artifactId>
+            <classifier>osx-aarch_64</classifier>
+            <scope>runtime</scope>
+        </dependency>
     </dependencies>
 
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-maven-plugin</artifactId>
+                    <configuration>
+                        <jvmArguments>
+                            --enable-native-access=ALL-UNNAMED
+                            --add-opens java.base/java.nio=ALL-UNNAMED
+                            --add-opens java.base/sun.nio.ch=ALL-UNNAMED
+                        </jvmArguments>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
 </project>

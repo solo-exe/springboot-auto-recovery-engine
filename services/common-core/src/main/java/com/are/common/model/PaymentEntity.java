@@ -12,10 +12,10 @@ import java.math.BigDecimal;
 @Table(name = "payments")
 public class PaymentEntity extends BaseEntity {
 
-    @Column(nullable = false)
+    @Column(name = "fromAccountId", nullable = false)
     private Long fromAccountId;
 
-    @Column(nullable = false)
+    @Column(name = "toAccountId", nullable = false)
     private Long toAccountId;
 
     @Column(nullable = false, precision = 19, scale = 4)
@@ -34,7 +34,7 @@ public class PaymentEntity extends BaseEntity {
     @Column(length = 100, nullable = false)
     private String reference;
 
-    @Column(length = 50)
+    @Column(name = "correlationId", length = 50)
     private String correlationId;
 
     @Column(name = "failure_reason", length = 500, nullable = true)

@@ -18,6 +18,8 @@
 /nbdist/
 /.nb-gradle/
 .DS_Store
+.venv/
+venv/
 
 # Build and Output
 target/

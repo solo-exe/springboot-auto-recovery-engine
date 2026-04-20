@@ -2,7 +2,7 @@
 # Alertmanager Configuration — ARE Observability
 # =============================================================================
 # Routes Prometheus alerts. Currently configured with a webhook receiver
-# placeholder for the future recovery engine to consume, and a log receiver
+# placeholder for recovery engine to consume, and a log receiver
 # that simply logs alerts to stdout for development visibility.
 # =============================================================================
 
@@ -32,7 +32,7 @@ receivers:
   # The recovery engine will listen on this URL to receive alert payloads
   - name: 'recovery-webhook'
     webhook_configs:
-      - url: 'http://recovery-engine:8090/api/alerts'
+      - url: 'http://are-recovery-engine:8087/api/alerts'
         send_resolved: true
         max_alerts: 0
 

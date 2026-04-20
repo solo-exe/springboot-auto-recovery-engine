@@ -1,0 +1,20 @@
+server:
+  port: 8087
+
+spring:
+  application:
+    name: recovery-engine
+  datasource:
+    url: jdbc:postgresql://postgres:5432/are_db
+    username: are_user
+    password: are_password
+  rabbitmq:
+    host: rabbitmq
+
+logging:
+  level:
+    root: INFO
+    com.are.recovery: DEBUG
+
+recovery:
+  admin-client-url: http://are-spring-boot-admin:8086

@@ -5,6 +5,10 @@ server:
 spring:
     application:
         name: notification-worker
+    # boot:
+    #     admin:
+    #         client:
+    #             url: http://localhost:8086
     threads:
         virtual:
             enabled: true
@@ -17,7 +21,6 @@ spring:
         exclude:
             - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
             - org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
-            - org.springframework.boot.autoconfigure.mail.MailSenderAutoConfiguration
     mail:
         host: ${MAIL_HOST:smtp.gmail.com}
         port: ${MAIL_PORT:587}
@@ -26,10 +29,12 @@ spring:
         properties:
             mail:
                 smtp:
-                auth: ${MAIL_SMTP_AUTH:true}
-                starttls:
-                    enable: ${MAIL_SMTP_STARTTLS_ENABLE:true}
-                    required: true
+                    auth: ${MAIL_SMTP_AUTH:true}
+                    starttls:
+                        enable: ${MAIL_SMTP_STARTTLS_ENABLE:true}
+                    connectiontimeout: 5000
+                    timeout: 5000
+                    writetimeout: 5000
                     
 management:
     endpoints:
@@ -44,15 +49,3 @@ management:
     metrics:
         tags:
             application: notification-worker
-
-springdoc:
-    api-docs:
-        path: /v3/api-docs/notification
-    openapi:
-        servers:
-            - url: http://localhost:8080
-              description: API Gateway
-    info:
-        title: Notification Worker API
-        version: 1.0.0
-        description: API for managing notification workers.

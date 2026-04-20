@@ -5,6 +5,10 @@ server:
 spring:
     application:
         name: payment-service
+    # boot:
+    #     admin:
+    #         client:
+    #             url: http://localhost:8086
     threads:
         virtual:
             enabled: true
@@ -41,18 +45,6 @@ resilience4j:
                 waitDurationInOpenState: 30s
                 permittedNumberOfCallsInHalfOpenState: 3
                 registerHealthIndicator: true
-
-springdoc:
-    api-docs:
-        path: /v3/api-docs/payment
-    openapi:
-        servers:
-            - url: http://localhost:8080/api
-              description: API Gateway
-    info:
-        title: Payment Service API
-        version: 1.0.0
-        description: API for managing payments.
 
 management:
     endpoints:

@@ -51,6 +51,12 @@ until curl -s $GATEWAY_URL/actuator/health | grep -q "UP"; do
 done
 echo -e "${GREEN}API Gateway is UP!${NC}"
 
+until curl -s http://localhost:8082/actuator/health | grep -q "UP"; do 
+  echo "Waiting for Account Service..."
+  sleep 5
+done
+echo -e "${GREEN}Account Service is UP!${NC}"
+
 
 echo -e "\n${YELLOW}[Phase 3] Generating Test Data and Logs...${NC}"
 
@@ -107,8 +113,8 @@ curl -s -X POST $GATEWAY_URL/api/payments/trigger-error > /dev/null
 echo -e "\n${YELLOW}[Phase 4] Validating Observability Stack Integration...${NC}"
 
 # Wait for logs to flush and metrics to be scraped
-echo "Waiting for metrics and logs to propagate (15s)..."
-sleep 15
+echo "Waiting for metrics and logs to propagate (10s)..."
+sleep 10
 
 # 1. Verify Prometheus Metrica
 echo -n "Checking Prometheus metrics... "
@@ -121,9 +127,10 @@ fi
 
 # 2. Verify Loki Logs
 echo -n "Checking Loki logs... "
-LOG_COUNT=$(curl -s -G "http://localhost:3100/loki/api/v1/query" \
+LOG_COUNT=$(curl -s -G "http://localhost:3100/loki/api/v1/query_range" \
   --data-urlencode 'query={compose_project="auto-recovery-engine"}' \
   | grep -o '"values":\[\[' | wc -l)
+
 
 if [ "$LOG_COUNT" -gt 0 ]; then
   echo -e "${GREEN}SUCCESS${NC} (Logs found in Loki)"
@@ -138,6 +145,31 @@ if [ "$ALERTS_LOADED" -gt 0 ]; then
   echo -e "${GREEN}SUCCESS${NC} (Alert rules loaded in Prometheus)"
 else
   echo -e "${RED}FAILED${NC} (Alert rules not found)"
+fi
+
+echo -e "\n${YELLOW}[Phase 5] Auto-Recovery Engine Evaluation...${NC}"
+echo "Triggering simulated Service Crash on Notification Worker..."
+
+# 1. Trigger the fault
+curl -s -X POST "$ACCOUNT_URL/fault/crash" > /dev/null
+
+echo "Waiting (up to 60s) for Alertmanager to fire and Recovery Engine to respond..."
+SUCCESS=false
+for i in {1..12}; do
+  HAS_RECOVERY_LOG=$(/usr/local/bin/docker-compose logs recovery-engine | grep "RESTART command" | wc -l)
+  if [ "$HAS_RECOVERY_LOG" -gt 0 ]; then
+    SUCCESS=true
+    break
+  fi
+  sleep 5
+done
+
+# 2. Check Recovery Engine Logs
+echo -n "Checking Recovery Engine logs for remediation actions... "
+if [ "$SUCCESS" = true ]; then
+  echo -e "${GREEN}SUCCESS${NC} (Recovery Engine engaged)"
+else
+  echo -e "${RED}FAILED${NC} (No RESTART action detected in Recovery Engine logs)"
 fi
 
 echo -e "\n${GREEN}=====================================================================${NC}"

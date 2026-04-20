@@ -32,30 +32,27 @@ public class PaymentController {
 
     @PostMapping("/initiate")
     public ResponseEntity<ApiResponse<PaymentResponse>> initiatePayment(
-            @RequestHeader("X-User-Id") Long userId,
             @Valid @RequestBody InitiatePaymentRequest request) {
-        log.info("Initiating payment for user ID: {} with request: {}", userId, request);
-        PaymentResponse response = paymentService.initiatePayment(userId, request);
+        log.info("Initiating payment with request: {}", request);
+        PaymentResponse response = paymentService.initiatePayment(request);
         log.info("Successfully initiated payment with ID: {}", response.id());
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success(response));
     }
 
     @GetMapping("/{paymentId}")
     public ResponseEntity<ApiResponse<PaymentResponse>> getPayment(
-            @RequestHeader("X-User-Id") Long userId,
             @PathVariable Long paymentId) {
-        log.debug("Fetching payment ID: {} for user ID: {}", paymentId, userId);
-        PaymentResponse response = paymentService.getPayment(userId, paymentId);
+        log.debug("Fetching payment ID: {} for current user", paymentId);
+        PaymentResponse response = paymentService.getPayment(paymentId);
         return ResponseEntity.ok(ApiResponse.success(response));
     }
 
     @GetMapping("/history")
     public ResponseEntity<ApiResponse<Page<PaymentResponse>>> getPaymentHistory(
-            @RequestHeader("X-User-Id") Long userId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
-        log.debug("Fetching payment history for user ID: {}, page: {}, size: {}", userId, page, size);
-        Page<PaymentResponse> history = paymentService.getPaymentHistory(userId,
+        log.debug("Fetching payment history for current user, page: {}, size: {}", page, size);
+        Page<PaymentResponse> history = paymentService.getPaymentHistory(
                 PageRequest.of(page, size, Sort.by("createdAt").descending()));
         return ResponseEntity.ok(ApiResponse.success(history));
     }

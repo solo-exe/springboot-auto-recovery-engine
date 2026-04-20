@@ -1,0 +1,22 @@
+server:
+  port: 8086
+
+spring:
+  application:
+    name: spring-boot-admin
+  boot:
+    admin:
+      notify:
+        slack:
+          enabled: false
+        pagerduty:
+          enabled: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    health:
+      show-details: always

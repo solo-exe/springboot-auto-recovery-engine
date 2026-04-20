@@ -3,12 +3,14 @@ package com.are.account.service;
 import com.are.account.dto.AccountResponse;
 import com.are.account.dto.BalanceUpdateRequest;
 import com.are.account.dto.CreateAccountRequest;
+import com.are.common.exception.ForbiddenException;
 import com.are.common.model.AccountEntity;
 import com.are.common.model.AccountStatus;
 import com.are.common.model.TransactionEntity;
 import com.are.common.model.TransactionEntry;
 import com.are.account.repository.AccountRepository;
 import com.are.account.repository.TransactionRepository;
+import com.are.common.security.UserContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
@@ -34,33 +36,23 @@ public class AccountService {
         this.transactionRepository = transactionRepository;
     }
 
-    @Transactional
-    public AccountResponse createAccount(CreateAccountRequest request) {
-        log.info("Creating account for: {}", request.ownerName());
-
-        AccountEntity account = new AccountEntity();
-        account.setAccountNumber(generateAccountNumber());
-        account.setAccountName(request.ownerName());
-        account.setStatus(AccountStatus.ACTIVE);
-
-        account = accountRepository.save(account);
-        log.info("Account created: {} ({})", account.getId(), account.getAccountNumber());
-
-        // Record initial deposit if balance > 0
-        if (account.getBalance().compareTo(BigDecimal.ZERO) > 0) {
-            recordTransaction(account, TransactionEntry.credit, account.getBalance(),
-                    BigDecimal.ZERO, account.getBalance(), "Initial deposit");
-        }
-
+    public AccountResponse getAccount(Long id) {
+        AccountEntity account = findAccountOrThrow(id);
+        checkAccess(account);
         return toResponse(account);
     }
 
-    public AccountResponse getAccount(Long id) {
-        AccountEntity account = findAccountOrThrow(id);
-        return toResponse(account);
+    public AccountResponse getMyAccount() {
+        Long userId = UserContext.getUserId();
+        return accountRepository.findByUserId(userId)
+                .map(this::toResponse)
+                .orElseThrow(() -> new ForbiddenException("No account found for the current user"));
     }
 
     public Page<AccountResponse> listAccounts(AccountStatus status, Pageable pageable) {
+        if (!UserContext.isAdmin()) {
+            throw new ForbiddenException("Only administrators can list all accounts");
+        }
         if (status != null) {
             return accountRepository.findByStatus(status, pageable).map(this::toResponse);
         }
@@ -70,6 +62,7 @@ public class AccountService {
     @Transactional
     public AccountResponse updateAccount(Long id, CreateAccountRequest request) {
         AccountEntity account = findAccountOrThrow(id);
+        checkAccess(account);
 
         if (request.ownerName() != null)
             account.setAccountName(request.ownerName());
@@ -86,6 +79,7 @@ public class AccountService {
     @Transactional
     public AccountResponse closeAccount(Long id) {
         AccountEntity account = findAccountOrThrow(id);
+        checkAccess(account);
         account.setStatus(AccountStatus.CLOSED);
         account = accountRepository.save(account);
         log.info("Account {} closed", id);
@@ -95,6 +89,7 @@ public class AccountService {
     @Transactional
     public AccountResponse updateBalance(Long id, BalanceUpdateRequest request) {
         AccountEntity account = findAccountOrThrow(id);
+        checkAccess(account);
 
         if (account.getStatus() != AccountStatus.ACTIVE) {
             throw new RuntimeException("Account is not active: " + id);
@@ -129,10 +124,23 @@ public class AccountService {
                 .orElseThrow(() -> new RuntimeException("Account not found: " + id));
     }
 
+    private void checkAccess(AccountEntity account) {
+        Long currentUserId = UserContext.getUserId();
+        if (UserContext.isAdmin()) {
+            return; // Admins can access everything
+        }
+
+        if (account.getUser() == null || !account.getUser().getId().equals(currentUserId)) {
+            log.warn("Access denied for user {} to account {}", currentUserId, account.getId());
+            throw new ForbiddenException("You do not have permission to access this account");
+        }
+    }
+
     private void recordTransaction(AccountEntity account, TransactionEntry type, BigDecimal amount,
             BigDecimal balanceBefore, BigDecimal balanceAfter, String description) {
         TransactionEntity txn = new TransactionEntity();
         txn.setAccount(account);
+        txn.setUser(account.getUser());
         txn.setType(type);
         txn.setAmount(amount);
         txn.setBalanceBefore(balanceBefore);

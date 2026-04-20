@@ -8,10 +8,11 @@ import com.are.account.repository.OTPRepository;
 import com.are.account.repository.UserRepository;
 import com.are.common.model.UserEntity;
 
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.client.WebClient;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -20,18 +21,18 @@ import java.util.Map;
 public class UserService {
 
     private static final Logger log = LoggerFactory.getLogger(UserService.class);
-    private static final int OTP_EXPIRY_MINUTES = 10;
 
-    private final RabbitTemplate rabbitTemplate;
+    private final WebClient notificationWorkerWebClient;
 
     public UserService(UserRepository userRepository,
             OTPRepository otpRepository,
             AccountRepository accountRepository,
-            RabbitTemplate rabbitTemplate,
+            WebClient notificationWorkerWebClient,
             OnboardingWorkerService onboardingWorkerService) {
-        this.rabbitTemplate = rabbitTemplate;
+        this.notificationWorkerWebClient = notificationWorkerWebClient;
     }
 
+    @CircuitBreaker(name = "notificationWorkerCB", fallbackMethod = "publishOnboardingOtpNotificationFallback")
     void publishOnboardingOtpNotification(UserEntity user, String otp) {
         Map<String, Object> event = new HashMap<>();
         event.put("type", "ONBOARDING_OTP");
@@ -42,8 +43,20 @@ public class UserService {
         event.put("body", "<p>Hello " + user.getFirstName() + ",</p>" +
                 "<p>Your onboarding OTP is <strong>" + otp + "</strong>. It expires in 10 minutes.</p>");
 
-        rabbitTemplate.convertAndSend(RabbitConfig.NOTIFICATION_EXCHANGE,
-                RabbitConfig.NOTIFICATION_ROUTING_KEY, event);
+        log.info("Calling notification-worker for OTP notification: {}", user.getEmail());
+        
+        notificationWorkerWebClient.post()
+                .uri("/notifications/otp")
+                .bodyValue(event)
+                .retrieve()
+                .toBodilessEntity()
+                .block();
+    }
+
+    void publishOnboardingOtpNotificationFallback(UserEntity user, String otp, Throwable t) {
+        log.error("Failed to call notification-worker for OTP (Circuit Breaker OPEN). Email: {}, Error: {}", 
+                user.getEmail(), t.getMessage());
+        // Potentially queue for later retry or notify admin
     }
 
     UserResponse toUserResponse(UserEntity user) {
