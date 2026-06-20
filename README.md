@@ -12,11 +12,15 @@ An advanced, event-driven, self-healing microservice ecosystem simulating a resi
 
 ## 🗺️ Architectural Topology
 
-The system implements an autonomic closed-loop feedback design for microservice self-healing, consisting of two primary cycles:
-1. **The Request & Notification Loop**: Clients interact via the API Gateway with core services (Account and Payment), which fire asynchronous job triggers to the Notification Service.
-2. **The Observability & Remediation Loop**: Container logs and metrics flow into the System Monitoring (Observability Tier), which routes alerts to the Auto-Recovery Engine. The engine evaluates its decision matrix and triggers automated remediation actions back on the environment.
+The system implements an autonomic closed-loop feedback design (MAPE-K loop) structured across three logical layers:
 
-![Autonomic Microservice Recovery Conceptual Model](are_arch.png)
+*   **Application Layer**: Houses the core microservices cluster (API Gateway, Account Service, Payment Service, and Notification Service) which handles transaction requests, internal communication, and notification triggers.
+*   **Observability Layer**: Aggregates live system telemetry (health checks, performance metrics, and application logs) scraped and processed by the monitoring tier.
+*   **Recovery Layer**: The **Auto-Recovery Engine** (ARE) which consumes telemetry alerts, evaluates them against the decision matrix, and dispatches automated remediation actions (such as service restarts) back to the application layer.
+
+<p align="center">
+  <img src="are_arch.png" alt="Auto-Recovery Engine (ARE) Architecture" width="700">
+</p>
 
 ---
 
