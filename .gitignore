@@ -1,4 +1,5 @@
 # IDEs and Editors
+.DS_Store
 .idea/
 .vscode/
 *.swp
@@ -17,7 +18,6 @@
 /dist/
 /nbdist/
 /.nb-gradle/
-.DS_Store
 .venv/
 venv/
 

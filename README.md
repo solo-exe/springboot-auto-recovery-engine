@@ -12,69 +12,11 @@ An advanced, event-driven, self-healing microservice ecosystem simulating a resi
 
 ## 🗺️ Architectural Topology
 
-The system comprises two core flows running concurrently on an internal bridge network:
-1. **The Business/Transaction Flow**: User onboarding, token auth, balance ledgers, bank transfers, and asynchronous email notification workers.
-2. **The Closed-Loop Self-Healing Flow**: Promtail/Prometheus scraping -> Alertmanager thresholds -> Webhook Alert -> Recovery Engine Matrix -> Service Remediation (via Spring Boot Admin or actuator triggers).
+The system implements an autonomic closed-loop feedback design for microservice self-healing, consisting of two primary cycles:
+1. **The Request & Notification Loop**: Clients interact via the API Gateway with core services (Account and Payment), which fire asynchronous job triggers to the Notification Service.
+2. **The Observability & Remediation Loop**: Container logs and metrics flow into the System Monitoring (Observability Tier), which routes alerts to the Auto-Recovery Engine. The engine evaluates its decision matrix and triggers automated remediation actions back on the environment.
 
-```mermaid
-graph TD
-    %% Clients and Gateway
-    Client([External Client]) -->|HTTP :8080| GW[API Gateway]
-
-    %% Business Microservices
-    GW -->|/api/accounts/**| AS[Account Service :8082]
-    GW -->|/api/payments/**| PS[Payment Service :8081]
-    
-    AS -->|JPA| DB[(PostgreSQL :5432<br>are_db)]
-    PS -->|JPA| DB
-    PS -->|WebClient HTTP| AS
-    
-    %% Messaging & Notifications
-    PS -->|Publish Event| RMQ((RabbitMQ :5672))
-    AS -->|Publish Event| RMQ
-    RMQ -->|Consume| NW[Notification Worker :8085]
-    NW -.->|SMTP / Mock Mail| Mail[Email Server]
-    
-    %% Shared Core Libraries
-    CC[common-core] -.->|Entities & Migrations| AS
-    CC -.->|Entities & Migrations| PS
-    
-    %% Observability Stack
-    subgraph "Observability Tier"
-        Prom[Prometheus :9090] -->|Scrape Actuators| GW
-        Prom -->|Scrape Actuators| AS
-        Prom -->|Scrape Actuators| PS
-        Prom -->|Scrape Actuators| NW
-        Prom -->|Scrape Actuators| RE
-        
-        Promtail[Promtail] -->|Tail Docker Logs| Loki[Loki :3100]
-        Loki --> Grafana[Grafana :3000]
-        Prom --> Grafana
-        
-        Prom -->|Fire Rules| AM[Alertmanager :9093]
-    end
-
-    %% Recovery Engine Loop
-    subgraph "Self-Healing Core"
-        AM -->|Webhook POST /api/alerts| RE[Recovery Engine :8087]
-        RE -->|Matched Remediation Rule| SBA[Spring Boot Admin :8086]
-        SBA -->|Orchestrate RESTART| AS
-        SBA -->|Orchestrate RESTART| PS
-        SBA -->|Orchestrate RESTART| NW
-        RE -->|Actuator / REST API| AS
-        RE -->|Actuator / REST API| PS
-    end
-    
-    classDef service fill:#e3f2fd,stroke:#1e88e5,stroke-width:2px;
-    classDef infra fill:#f1f8e9,stroke:#7cb342,stroke-width:2px;
-    classDef obs fill:#fff3e0,stroke:#f57c00,stroke-width:2px;
-    classDef core fill:#f3e5f5,stroke:#8e24aa,stroke-width:2px;
-    
-    class GW,AS,PS,NW service;
-    class DB,RMQ infra;
-    class Prom,Promtail,Loki,Grafana,AM obs;
-    class RE,SBA core;
-```
+![Autonomic Microservice Recovery Conceptual Model](autonomic_recovery_model.png)
 
 ---
 
