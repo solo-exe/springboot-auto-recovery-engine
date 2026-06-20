@@ -16,7 +16,7 @@ The system implements an autonomic closed-loop feedback design for microservice 
 1. **The Request & Notification Loop**: Clients interact via the API Gateway with core services (Account and Payment), which fire asynchronous job triggers to the Notification Service.
 2. **The Observability & Remediation Loop**: Container logs and metrics flow into the System Monitoring (Observability Tier), which routes alerts to the Auto-Recovery Engine. The engine evaluates its decision matrix and triggers automated remediation actions back on the environment.
 
-![Autonomic Microservice Recovery Conceptual Model](autonomic_recovery_model.png)
+![Autonomic Microservice Recovery Conceptual Model](are_arch.png)
 
 ---
 
