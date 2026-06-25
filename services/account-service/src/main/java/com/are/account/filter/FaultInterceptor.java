@@ -37,9 +37,7 @@ public class FaultInterceptor implements Filter {
 
         // Simulate unresponsive service (60s sleep)
         if (faultController.isUnresponsive()) {
-            try {
-                Thread.sleep(60_000);
-            } catch (InterruptedException e) {
+            try { Thread.sleep(3_000); } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
         }

@@ -65,6 +65,8 @@ services:
       - '--web.enable-lifecycle'
     networks:
       - are-network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     deploy:
       resources:
         limits:
@@ -130,6 +132,8 @@ services:
       - loki
     networks:
       - are-network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     deploy:
       resources:
         limits:
@@ -147,6 +151,8 @@ services:
       - '--config.file=/etc/alertmanager/alertmanager.yml'
     networks:
       - are-network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     deploy:
       resources:
         limits:

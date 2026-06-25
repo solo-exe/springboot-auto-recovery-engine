@@ -8,19 +8,19 @@
 
 groups:
   - name: are_service_health
-    interval: 10s
+    interval: 5s
     rules:
       # -----------------------------------------------------------------------
       # Service Down — detects when a scrape target is unreachable
       # -----------------------------------------------------------------------
       - alert: ServiceDown
         expr: up == 0
-        for: 30s
+        for: 5s
         labels:
           severity: critical
         annotations:
           summary: "Service {{ $labels.job }} is DOWN"
-          description: "The Prometheus scrape target for {{ $labels.job }} ({{ $labels.instance }}) has been unreachable for over 30 seconds."
+          description: "The Prometheus scrape target for {{ $labels.job }} ({{ $labels.instance }}) has been unreachable for over 5 seconds."
 
       # -----------------------------------------------------------------------
       # High HTTP Error Rate — 5xx responses exceed 10% of total traffic
@@ -28,11 +28,11 @@ groups:
       - alert: HighErrorRate
         expr: |
           (
-            sum(rate(http_server_requests_seconds_count{status=~"5.."}[2m])) by (job, application)
+            sum(rate(http_server_requests_seconds_count{status=~"5.."}[15s])) by (job, application)
             /
-            sum(rate(http_server_requests_seconds_count[2m])) by (job, application)
+            sum(rate(http_server_requests_seconds_count[15s])) by (job, application)
           ) > 0.10
-        for: 1m
+        for: 5s
         labels:
           severity: warning
         annotations:
@@ -44,10 +44,12 @@ groups:
       # -----------------------------------------------------------------------
       - alert: HighLatency
         expr: |
-          histogram_quantile(0.95,
-            sum(rate(http_server_requests_seconds_bucket[5m])) by (job, application, le)
+          (
+            sum(rate(http_server_requests_seconds_sum[15s])) by (job, application)
+            /
+            sum(rate(http_server_requests_seconds_count[15s])) by (job, application)
           ) > 2.0
-        for: 2m
+        for: 5s
         labels:
           severity: warning
         annotations:

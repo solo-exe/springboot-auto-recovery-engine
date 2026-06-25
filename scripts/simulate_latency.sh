@@ -1,17 +1,16 @@
 #!/bin/bash
 
 # ============================================================
-# Performance Test: Service Crash Scenario (Academic Edition)
+# Performance Test: High Latency Scenario
 # Measures MTTR, Latencies, and Overhead. Outputs to JSON.
 # ============================================================
 
 set -e
 
-SERVICES=("api-gateway" "notification-worker" "payment-service" "account-service")
-PORTS=(8080 8085 8081 8082)
-SHORTS=("gateway" "notif" "payment" "account")
+SERVICES=("payment-service" "account-service")
+PORTS=(8081 8082)
 ITERATIONS=10
-RESULTS_FILE="logs/crash_scenario_results.json"
+RESULTS_FILE="logs/latency_results.json"
 
 # Colors
 GREEN='\033[0;32m'
@@ -52,11 +51,9 @@ get_recovery_overhead() {
     if [ -f "$pid_file" ]; then
         local pid=$(cat "$pid_file")
         if kill -0 "$pid" 2>/dev/null; then
-            # ps output format: %cpu rss(KB)
             local stats=$(ps -p "$pid" -o %cpu=,rss= 2>/dev/null || echo "0 0")
             local cpu=$(echo "$stats" | awk '{print $1}')
             local mem_kb=$(echo "$stats" | awk '{print $2}')
-            # Convert KB to MB
             local mem_mb=$(awk "BEGIN {printf \"%.2f\", $mem_kb/1024}")
             echo "$cpu,$mem_mb"
             return
@@ -65,33 +62,18 @@ get_recovery_overhead() {
     echo "0.0,0.0"
 }
 
-ensure_service_running() {
-    local pid_file="logs/${SERVICE_NAME}.pid"
-    if [ ! -f "$pid_file" ] || ! kill -0 $(cat "$pid_file" 2>/dev/null) 2>/dev/null; then
-        echo -e "${YELLOW}$SERVICE_NAME is not running. Starting it now via debug_launch.sh...${NC}"
-        ./scripts/debug_launch.sh $SHORT_NAME > /dev/null 2>&1 &
-        wait_for_health $PORT
-        echo -e "${GREEN}$SERVICE_NAME is now up and running.${NC}"
-        sleep 5
-    fi
-}
-
-echo -e "${CYAN}Starting Service Crash Performance Test ($ITERATIONS iterations)...${NC}"
+echo -e "${CYAN}Starting High Latency Performance Test ($ITERATIONS iterations)...${NC}"
 echo -e "${CYAN}Output will be written as JSON to $RESULTS_FILE${NC}"
 
 # Initialize JSON array
 echo "[" > "$RESULTS_FILE"
 
 for i in $(seq 1 $ITERATIONS); do
-    idx=$(( (i - 1) % 4 ))
+    idx=$(( (i - 1) % 2 ))
     SERVICE_NAME=${SERVICES[$idx]}
     PORT=${PORTS[$idx]}
-    SHORT_NAME=${SHORTS[$idx]}
 
     echo -e "\n${CYAN}--- Iteration $i: $SERVICE_NAME ---${NC}"
-    
-    # 1. Pre-check: Ensure target service is running
-    ensure_service_running
     
     # Ensure it is healthy before proceeding
     echo "Waiting for $SERVICE_NAME to be perfectly healthy..."
@@ -101,30 +83,32 @@ for i in $(seq 1 $ITERATIONS); do
     # Get initial log line count so we only search new logs
     LOG_START_LINE=$(get_recovery_log_lines)
     
-    # 2. Inject Crash
-    PID_FILE="logs/${SERVICE_NAME}.pid"
-    # Find the actual Java process bound to the port (Maven PID is not enough)
-    TARGET_PID=$(lsof -i :$PORT -sTCP:LISTEN | awk 'NR>1 && $1 ~ /java/ {print $2}' | head -n 1)
-    if [ -z "$TARGET_PID" ]; then
-        echo -e "${RED}Could not find process listening on port $PORT. Is it running?${NC}"
-        exit 1
-    fi
-    echo "Crashing $SERVICE_NAME (Port: $PORT, Java PID: $TARGET_PID)..."
-    
+    # 2. Inject Fault (High Latency)
+    echo "Injecting High Latency (3s delay) on $SERVICE_NAME (Port: $PORT)..."
     T_CRASH=$(current_time_ms)
-    # Kill the actual Java process
-    kill -9 "$TARGET_PID" 2>/dev/null || true
-    # Also kill the Maven wrapper so debug_launch.sh can restart cleanly
-    kill -9 $(cat "$PID_FILE" 2>/dev/null) 2>/dev/null || true
+    
+    # Set the fault
+    curl -s -X POST -H "Content-Type: application/json" -d '{"enable": true}' "http://localhost:$PORT/fault/unresponsive" > /dev/null
+    
+    # Start background traffic generator to trigger Prometheus metrics
+    echo "Starting background traffic generator..."
+    while true; do
+        if [ "$PORT" -eq 8081 ]; then
+            curl -s "http://localhost:$PORT/payments/history" > /dev/null &
+        else
+            curl -s "http://localhost:$PORT/accounts/profile" > /dev/null &
+        fi
+        sleep 0.5
+    done &
+    TRAFFIC_PID=$!
     
     # 3. Wait for Detection by Recovery Engine
-    echo "Waiting for Recovery Engine to detect the crash..."
+    echo "Waiting for Recovery Engine to detect the High Latency..."
     T_DETECT=0
-    # Timeout to prevent infinite loop (120 actual seconds)
     TIMEOUT=240
     ELAPSED=0
     while [ $ELAPSED -lt $TIMEOUT ]; do
-        if tail -n +$LOG_START_LINE logs/recovery-engine.log | grep -q "Executing RESTART on service $SERVICE_NAME"; then
+        if tail -n +$LOG_START_LINE logs/recovery-engine.log | grep -q "Matched rule \[Response Time Degradation\] for alert \[HighLatency\]"; then
             T_DETECT=$(current_time_ms)
             break
         fi
@@ -133,17 +117,20 @@ for i in $(seq 1 $ITERATIONS); do
     done
     
     if [ $T_DETECT -eq 0 ]; then
-        echo -e "${RED}Recovery Engine did not detect the crash within timeout. Ensure Prometheus is scraping and alerting correctly.${NC}"
+        echo -e "${RED}Recovery Engine did not detect the high latency within timeout.${NC}"
+        kill -9 $TRAFFIC_PID 2>/dev/null || true
+        pkill -f "curl.*http://localhost.*" 2>/dev/null || true
+        curl -s -X POST -H "Content-Type: application/json" -d '{"enable": false}' "http://localhost:$PORT/fault/unresponsive" > /dev/null
         exit 1
     fi
     
     DETECT_LATENCY=$((T_DETECT - T_CRASH))
     echo -e "${GREEN}Detected! Latency: ${DETECT_LATENCY}ms${NC}"
     
-    # 4. Wait for Execution (since ActionInvoker takes ~500ms then finishes)
+    # 4. Wait for Execution (Circuit Breaker HALF_OPEN)
     T_EXEC_FINISH=0
     while true; do
-        if tail -n +$LOG_START_LINE logs/recovery-engine.log | grep -q "Sending RESTART command to Spring Boot Admin for instance $SERVICE_NAME"; then
+        if tail -n +$LOG_START_LINE logs/recovery-engine.log | grep -q "Changing Circuit Breaker state to HALF_OPEN on instance $SERVICE_NAME"; then
             T_EXEC_FINISH=$(current_time_ms)
             break
         fi
@@ -152,32 +139,36 @@ for i in $(seq 1 $ITERATIONS); do
     EXEC_LATENCY=$((T_EXEC_FINISH - T_DETECT))
     echo -e "${GREEN}Remediation Executed! Execution Latency: ${EXEC_LATENCY}ms${NC}"
     
-    # 5. Measure Overhead at Execution Time
+    # 5. Measure Overhead
     OVERHEAD=$(get_recovery_overhead)
     CPU_USAGE=$(echo "$OVERHEAD" | cut -d',' -f1)
     MEM_USAGE=$(echo "$OVERHEAD" | cut -d',' -f2)
     echo -e "${CYAN}Recovery Engine Overhead - CPU: ${CPU_USAGE}%, Mem: ${MEM_USAGE}MB${NC}"
     
-    # 6. Close the loop: The Recovery Engine currently mocks the OS restart.
-    echo "Triggering actual OS-level restart via debug_launch.sh..."
-    ./scripts/debug_launch.sh $SHORT_NAME > /dev/null 2>&1 &
+    # 6. Stop Fault & Traffic
+    echo "Removing fault (disabling unresponsive delay)..."
+    curl -s -X POST -H "Content-Type: application/json" -d '{"enable": false}' "http://localhost:$PORT/fault/unresponsive" > /dev/null
+    
+    echo "Stopping traffic generator..."
+    kill -9 $TRAFFIC_PID 2>/dev/null || true
+    pkill -f "curl.*http://localhost.*" 2>/dev/null || true
     
     # 7. Wait for Full Recovery (MTTR)
-    echo "Waiting for $SERVICE_NAME to become healthy again..."
-    wait_for_health $PORT
+    # Since we are removing the fault, the service is immediately healthy, 
+    # but let's wait a moment for metrics to stabilize.
+    sleep 5
     T_RECOVER=$(current_time_ms)
     
     MTTR=$((T_RECOVER - T_CRASH))
     echo -e "${GREEN}Recovered! MTTR: ${MTTR}ms${NC}"
     
     # 8. Record Metrics to JSON
-    # Formatting JSON object
     cat <<EOF >> "$RESULTS_FILE"
   {
     "iteration": $i,
     "service_name": "$SERVICE_NAME",
     "timestamps": {
-      "t_crash_ms": $T_CRASH,
+      "t_fault_ms": $T_CRASH,
       "t_detect_ms": $T_DETECT,
       "t_recover_ms": $T_RECOVER
     },
@@ -193,7 +184,6 @@ for i in $(seq 1 $ITERATIONS); do
   }
 EOF
 
-    # Add comma if not the last iteration
     if [ $i -lt $ITERATIONS ]; then
         echo "," >> "$RESULTS_FILE"
     fi
@@ -202,7 +192,6 @@ EOF
     sleep 15
 done
 
-# Close JSON array
 echo "]" >> "$RESULTS_FILE"
 
 echo -e "\n${CYAN}======================================================${NC}"

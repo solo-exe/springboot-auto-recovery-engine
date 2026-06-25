@@ -30,7 +30,7 @@ public class FaultInterceptor implements Filter {
         }
 
         if (faultController.isUnresponsive()) {
-            try { Thread.sleep(60_000); } catch (InterruptedException e) {
+            try { Thread.sleep(3_000); } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
         }
