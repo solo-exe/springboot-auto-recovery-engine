@@ -32,7 +32,7 @@ receivers:
   # The recovery engine will listen on this URL to receive alert payloads
   - name: 'recovery-webhook'
     webhook_configs:
-      - url: 'http://are-recovery-engine:8087/api/alerts'
+      - url: 'http://host.docker.internal:8087/api/alerts'
         send_resolved: true
         max_alerts: 0
 

@@ -8,10 +8,10 @@ notification-worker:
 spring:
     application:
         name: account-service
-    # boot:
-    #     admin:
-    #         client:
-    #             url: http://localhost:8086
+    boot:
+        admin:
+            client:
+                url: http://localhost:8086
     threads:
         virtual:
             enabled: true

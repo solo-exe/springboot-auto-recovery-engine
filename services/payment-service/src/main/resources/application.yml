@@ -5,10 +5,10 @@ server:
 spring:
     application:
         name: payment-service
-    # boot:
-    #     admin:
-    #         client:
-    #             url: http://localhost:8086
+    boot:
+        admin:
+            client:
+                url: http://localhost:8086
     threads:
         virtual:
             enabled: true

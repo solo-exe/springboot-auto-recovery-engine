@@ -1,4 +1,4 @@
-.PHONY: build start-gateway start-payment start-account start-notif start-recovery start-admin launch make-migrations migrate migrate-diff migrate-run migrate-rollback rollback infra-compose-up compose-up compose-down compose-logs clean
+.PHONY: build start-gateway start-payment start-account start-notif start-recovery start-admin launch debug-launch make-migrations migrate migrate-diff migrate-run migrate-rollback rollback infra-compose-up compose-up compose-down compose-logs clean
 
 # Variables
 MVN = mvn
@@ -70,6 +70,13 @@ compose-logs:
 launch:
 	@chmod +x scripts/launch_system.sh
 	@./scripts/launch_system.sh
+
+# 🔍 Debug launch — start services sequentially in the current terminal with full logging
+# Usage: make debug-launch ARGS="all"  (or: infra, obs, build, admin, account, payment, notif, gateway, recovery, status, stop)
+ARGS ?= all
+debug-launch:
+	@chmod +x scripts/debug_launch.sh
+	@./scripts/debug_launch.sh $(ARGS)
 
 # ----------------------------------------
 # Local Microservice Run Commands 

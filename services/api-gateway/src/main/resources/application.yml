@@ -3,10 +3,10 @@ server:
     forward-headers-strategy: framework
 
 spring:
-    # boot:
-    #     admin:
-    #         client:
-    #             url: http://localhost:8086
+    boot:
+        admin:
+            client:
+                url: http://localhost:8086
     application:
         name: api-gateway
     threads:

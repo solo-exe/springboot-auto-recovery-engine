@@ -5,10 +5,10 @@ server:
 spring:
     application:
         name: notification-worker
-    # boot:
-    #     admin:
-    #         client:
-    #             url: http://localhost:8086
+    boot:
+        admin:
+            client:
+                url: http://localhost:8086
     threads:
         virtual:
             enabled: true
@@ -44,6 +44,9 @@ management:
     endpoint:
         health:
             show-details: always
+    health:
+        mail:
+            enabled: false
         shutdown:
             access: UNRESTRICTED
     metrics:

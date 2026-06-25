@@ -14,7 +14,7 @@ public class ActionInvoker {
 
     public boolean invoke(String actionType, String serviceName) {
         log.info("Executing {} on service {} via Spring Boot Admin API at {}", actionType, serviceName, adminUrl);
-        
+
         switch (actionType) {
             case "RESTART":
                 return executeRestart(serviceName);
@@ -45,7 +45,8 @@ public class ActionInvoker {
     }
 
     private boolean executeCircuitBreakerState(String serviceName, String state) {
-        log.info(">>>> Changing Circuit Breaker state to {} on instance {} via Resilience4j Actuator <<<<", state, serviceName);
+        log.info(">>>> Changing Circuit Breaker state to {} on instance {} via Resilience4j Actuator <<<<", state,
+                serviceName);
         return true;
     }
 

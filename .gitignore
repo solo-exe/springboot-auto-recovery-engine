@@ -20,6 +20,7 @@
 /.nb-gradle/
 .venv/
 venv/
+logs/
 
 # Build and Output
 target/

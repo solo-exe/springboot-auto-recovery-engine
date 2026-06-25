@@ -20,19 +20,19 @@ scrape_configs:
   - job_name: 'api-gateway'
     metrics_path: '/actuator/prometheus'
     static_configs:
-      - targets: ['api-gateway:8080']
+      - targets: ['host.docker.internal:8080']
 
   - job_name: 'account-service'
     metrics_path: '/actuator/prometheus'
     static_configs:
-      - targets: ['account-service:8082']
+      - targets: ['host.docker.internal:8082']
 
   - job_name: 'payment-service'
     metrics_path: '/actuator/prometheus'
     static_configs:
-      - targets: ['payment-service:8081']
+      - targets: ['host.docker.internal:8081']
 
   - job_name: 'notification-worker'
     metrics_path: '/actuator/prometheus'
     static_configs:
-      - targets: ['notification-worker:8085']
+      - targets: ['host.docker.internal:8085']

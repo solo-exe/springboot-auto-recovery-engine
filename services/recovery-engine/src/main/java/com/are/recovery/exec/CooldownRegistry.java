@@ -9,14 +9,16 @@ import java.util.concurrent.ConcurrentHashMap;
 public class CooldownRegistry {
     
     private final Map<String, Instant> cooldowns = new ConcurrentHashMap<>();
-    private static final long COOLDOWN_SECONDS = 120;
+    
+    @org.springframework.beans.factory.annotation.Value("${recovery.cooldown.seconds:120}")
+    private long cooldownSeconds;
 
     public boolean canExecute(String serviceName) {
         Instant lastExecuted = cooldowns.get(serviceName);
         if (lastExecuted == null) {
             return true;
         }
-        return Instant.now().isAfter(lastExecuted.plusSeconds(COOLDOWN_SECONDS));
+        return Instant.now().isAfter(lastExecuted.plusSeconds(cooldownSeconds));
     }
 
     public void recordExecution(String serviceName) {

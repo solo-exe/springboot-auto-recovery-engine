@@ -19,7 +19,7 @@ import java.util.Map;
 public class AuditLogger {
     private static final Logger log = LoggerFactory.getLogger(AuditLogger.class);
     private final ObjectMapper mapper = new ObjectMapper();
-    private static final String AUDIT_FILE = "/app/recovery-audit.json";
+    private static final String AUDIT_FILE = "logs/recovery-audit.json";
 
     @EventListener
     public void onRecoveryEvent(RecoveryEvent event) {

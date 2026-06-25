@@ -11,15 +11,19 @@ spring:
   profiles:
     include: recovery-matrix
 
+  liquibase:
+    enabled: false
   datasource:
-      url: jdbc:postgresql://localhost:5432/are_db
-      username: are_user
-      password: are_password
-      hikari:
-          maximum-pool-size: 10
-          minimum-idle: 2
-          connection-timeout: 5000
-          leak-detection-threshold: 10000
+    url: jdbc:postgresql://localhost:5432/are_db
+    username: are_user
+    password: are_password
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      connection-timeout: 5000
+      leak-detection-threshold: 10000
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
 
 management:
   endpoints:
@@ -32,6 +36,8 @@ management:
 
 # Default threshold configurations (these will be mapped by ConfigurationProperties)
 recovery:
+  cooldown:
+    seconds: 5
   matrix:
     - fault: Service Crash
       signal: HTTP 5xx rate spike
