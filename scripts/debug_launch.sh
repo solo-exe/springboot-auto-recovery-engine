@@ -144,7 +144,7 @@ start_java_service() {
     log_step "Log file: $log_file"
 
     # Launch in background, tee to log file
-    $MVN spring-boot:run -pl "$maven_module" > "$log_file" 2>&1 &
+    $MVN spring-boot:run -pl "$maven_module" -Dspring-boot.run.jvmArguments="-Xmx512m" > "$log_file" 2>&1 &
     local pid=$!
     echo "$pid" > "$LOG_DIR/${service_name}.pid"
     log_step "PID: $pid"

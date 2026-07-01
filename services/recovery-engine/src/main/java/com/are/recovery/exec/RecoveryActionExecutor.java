@@ -82,6 +82,9 @@ public class RecoveryActionExecutor {
         if ("DbConnectionTimeout".equalsIgnoreCase(alertName) && "Connection Pool Exhaustion".equalsIgnoreCase(rule.getFault())) {
             return true;
         }
+        if ("HighMemoryUsage".equalsIgnoreCase(alertName) && "Memory Leak".equalsIgnoreCase(rule.getFault())) {
+            return true;
+        }
         return false;
     }
 }

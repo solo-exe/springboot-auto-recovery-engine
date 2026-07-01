@@ -29,8 +29,11 @@ public class FaultSimulationController {
     private final AtomicBoolean simulateMemoryLeak = new AtomicBoolean(false);
     private final AtomicBoolean simulateCpuSpike = new AtomicBoolean(false);
     private final List<byte[]> leakedMemory = new ArrayList<>();
+    private final javax.sql.DataSource dataSource;
+    private final List<java.sql.Connection> leakedConnections = new ArrayList<>();
 
-    public FaultSimulationController(MeterRegistry meterRegistry) {
+    public FaultSimulationController(MeterRegistry meterRegistry, javax.sql.DataSource dataSource) {
+        this.dataSource = dataSource;
         // Register are.fault.active gauge
         Gauge.builder("are.fault.active", this,
                 ctrl -> (ctrl.simulateUnresponsive.get() || ctrl.errorRatePercent.get() > 0 ||
@@ -56,27 +59,44 @@ public class FaultSimulationController {
     }
 
     @PostMapping("/memory-leak")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> toggleMemoryLeak(@RequestBody Map<String, Boolean> body) {
-        boolean enable = body.getOrDefault("enable", false);
+    public ResponseEntity<ApiResponse<Map<String, Object>>> toggleMemoryLeak(@RequestBody Map<String, Object> body) {
+        boolean enable = false;
+        if (body.containsKey("enable")) {
+            enable = Boolean.parseBoolean(body.get("enable").toString());
+        }
+        
+        int maxMb = -1;
+        if (body.containsKey("maxMb")) {
+            maxMb = Integer.parseInt(body.get("maxMb").toString());
+        }
+        final int targetMaxMb = maxMb;
+
         simulateMemoryLeak.set(enable);
-        log.warn("FAULT_SIMULATION: Memory leak simulation set to {}", enable);
+        log.warn("FAULT_SIMULATION: Memory leak simulation set to {}, maxMb: {}", enable, maxMb);
+        
         if (enable) {
-            // Background thread allocating 1MB every 500ms
             Thread.ofVirtual().name("memory-leak-sim").start(() -> {
+                int allocatedMb = 0;
                 while (simulateMemoryLeak.get()) {
-                    leakedMemory.add(new byte[1024 * 1024]); // 1MB
-                    try {
-                        Thread.sleep(500);
-                    } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
-                        break;
+                    // Gradual ramp: 1MB every 500ms (~2MB/s) to give Prometheus time to observe the trend
+                    if (targetMaxMb <= 0 || allocatedMb < targetMaxMb) {
+                        leakedMemory.add(new byte[1024 * 1024]); // 1MB retained (leaked)
+                        allocatedMb++;
+                        // Generate GC churn with temporary allocations to simulate realistic heap pressure
+                        for (int i = 0; i < 3; i++) {
+                            @SuppressWarnings("unused")
+                            byte[] garbage = new byte[256 * 1024]; // 256KB discarded immediately
+                        }
+                    }
+                    try { Thread.sleep(500); } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt(); break;
                     }
                 }
             });
         } else {
             leakedMemory.clear();
         }
-        return ResponseEntity.ok(ApiResponse.success(Map.of("fault", "memory-leak", "active", enable)));
+        return ResponseEntity.ok(ApiResponse.success(Map.of("fault", "memory-leak", "active", enable, "maxMb", maxMb)));
     }
 
     @PostMapping("/cpu-spike")
@@ -107,6 +127,27 @@ public class FaultSimulationController {
             System.exit(1);
         });
         return ResponseEntity.ok(ApiResponse.success(Map.of("fault", "crash", "action", "System.exit(1) initiated")));
+    }
+
+    @PostMapping("/db-exhaustion")
+    public ResponseEntity<ApiResponse<Map<String, Object>>> toggleDbExhaustion(@RequestBody Map<String, Boolean> body) {
+        boolean enable = body.getOrDefault("enable", false);
+        log.warn("FAULT_SIMULATION: DB exhaustion simulation set to {}", enable);
+        if (enable) {
+            try {
+                for (int i = 0; i < 10; i++) {
+                    leakedConnections.add(dataSource.getConnection());
+                }
+            } catch (Exception e) {
+                log.error("Error leaking DB connection", e);
+            }
+        } else {
+            for (java.sql.Connection c : leakedConnections) {
+                try { c.close(); } catch (Exception ignored) {}
+            }
+            leakedConnections.clear();
+        }
+        return ResponseEntity.ok(ApiResponse.success(Map.of("fault", "db-exhaustion", "active", enable)));
     }
 
     // --- Accessors for FaultInterceptor ---

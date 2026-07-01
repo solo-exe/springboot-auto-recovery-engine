@@ -65,3 +65,8 @@ recovery:
       primary-action: CASCADING_RECOVERY
       threshold: 2
       window: 60s
+    - fault: Memory Leak
+      signal: JVM Heap > 85%
+      primary-action: RESTART
+      threshold: 0.85
+      window: 120s

@@ -154,10 +154,12 @@ public class PaymentService {
 
     // ----- Private helpers -----
 
-    @SuppressWarnings("unchecked")
     private Map<String, Object> getInternalAccount(Long userId) {
+        if (userId == null) {
+            throw new ForbiddenException("Missing User ID");
+        }
         Map<String, Object> response = accountServiceWebClient.get()
-                .uri("/internal/account/{userId}", userId)
+                .uri("/internal/account/" + userId)
                 .retrieve()
                 .bodyToMono(Map.class)
                 .block();

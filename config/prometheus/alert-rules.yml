@@ -56,8 +56,21 @@ groups:
           summary: "High p95 latency on {{ $labels.application }}"
           description: "{{ $labels.application }} p95 response time is above 2s. Current value: {{ $value | humanizeDuration }}."
 
+      # -----------------------------------------------------------------------
+      # DB Connection Timeout — HikariCP pending threads / connection timeouts
+      # -----------------------------------------------------------------------
+      - alert: DbConnectionTimeout
+        expr: |
+          hikaricp_connections_pending > 5
+        for: 5s
+        labels:
+          severity: warning
+        annotations:
+          summary: "Database Connection Pool Exhaustion on {{ $labels.application }}"
+          description: "HikariCP has more than 5 pending threads waiting for a connection."
+
   - name: are_jvm_health
-    interval: 15s
+    interval: 5s
     rules:
       # -----------------------------------------------------------------------
       # High JVM Heap Usage — heap utilization exceeds 85%
@@ -69,7 +82,7 @@ groups:
             /
             jvm_memory_max_bytes{area="heap"}
           ) > 0.85
-        for: 2m
+        for: 5s
         labels:
           severity: warning
         annotations:

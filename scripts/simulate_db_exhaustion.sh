@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ============================================================
-# Performance Test: High Latency Scenario
+# Performance Test: DB Connection Pool Exhaustion Scenario
 # Measures MTTR, Latencies, and Overhead. Outputs to JSON.
 # ============================================================
 
@@ -10,7 +10,7 @@ set -e
 SERVICES=("payment-service" "account-service")
 PORTS=(8081 8082)
 ITERATIONS=10
-RESULTS_FILE="logs/latency_results.json"
+RESULTS_FILE="logs/db_exhaustion_results.json"
 
 # Colors
 GREEN='\033[0;32m'
@@ -62,7 +62,7 @@ get_recovery_overhead() {
     echo "0.0,0.0"
 }
 
-echo -e "${CYAN}Starting High Latency Performance Test ($ITERATIONS iterations)...${NC}"
+echo -e "${CYAN}Starting DB Connection Pool Exhaustion Test ($ITERATIONS iterations)...${NC}"
 echo -e "${CYAN}Output will be written as JSON to $RESULTS_FILE${NC}"
 
 # Initialize JSON array
@@ -83,12 +83,12 @@ for i in $(seq 1 $ITERATIONS); do
     # Get initial log line count so we only search new logs
     LOG_START_LINE=$(get_recovery_log_lines)
     
-    # 2. Inject Fault (High Latency)
-    echo "Injecting High Latency (3s delay) on $SERVICE_NAME (Port: $PORT)..."
+    # 2. Inject Fault (DB Exhaustion)
+    echo "Injecting DB Connection Exhaustion on $SERVICE_NAME (Port: $PORT)..."
     T_CRASH=$(current_time_ms)
     
     # Set the fault
-    curl -s -X POST -H "Content-Type: application/json" -d '{"enable": true}' "http://localhost:$PORT/fault/unresponsive" > /dev/null
+    curl -s -X POST -H "Content-Type: application/json" -d '{"enable": true}' "http://localhost:$PORT/fault/db-exhaustion" > /dev/null
     
     # Start background traffic generator to trigger Prometheus metrics
     echo "Starting background traffic generator..."
@@ -103,12 +103,12 @@ for i in $(seq 1 $ITERATIONS); do
     TRAFFIC_PID=$!
     
     # 3. Wait for Detection by Recovery Engine
-    echo "Waiting for Recovery Engine to detect the High Latency..."
+    echo "Waiting for Recovery Engine to detect the DB Exhaustion..."
     T_DETECT=0
     TIMEOUT=240
     ELAPSED=0
     while [ $ELAPSED -lt $TIMEOUT ]; do
-        if tail -n +$LOG_START_LINE logs/recovery-engine.log | grep -q "Matched rule \[Response Time Degradation\] for alert \[HighLatency\]"; then
+        if tail -n +$LOG_START_LINE logs/recovery-engine.log | grep -q "Matched rule \[Connection Pool Exhaustion\] for alert \[DbConnectionTimeout\]"; then
             T_DETECT=$(current_time_ms)
             break
         fi
@@ -117,20 +117,20 @@ for i in $(seq 1 $ITERATIONS); do
     done
     
     if [ $T_DETECT -eq 0 ]; then
-        echo -e "${RED}Recovery Engine did not detect the high latency within timeout.${NC}"
+        echo -e "${RED}Recovery Engine did not detect DB Exhaustion within timeout.${NC}"
         kill -9 $TRAFFIC_PID 2>/dev/null || true
         pkill -f "curl.*http://localhost.*" 2>/dev/null || true
-        curl -s -X POST -H "Content-Type: application/json" -d '{"enable": false}' "http://localhost:$PORT/fault/unresponsive" > /dev/null
+        curl -s -X POST -H "Content-Type: application/json" -d '{"enable": false}' "http://localhost:$PORT/fault/db-exhaustion" > /dev/null
         exit 1
     fi
     
     DETECT_LATENCY=$((T_DETECT - T_CRASH))
     echo -e "${GREEN}Detected! Latency: ${DETECT_LATENCY}ms${NC}"
     
-    # 4. Wait for Execution (Circuit Breaker HALF_OPEN)
+    # 4. Wait for Execution (POOL_RESET)
     T_EXEC_FINISH=0
     while true; do
-        if tail -n +$LOG_START_LINE logs/recovery-engine.log | grep -q "Changing Circuit Breaker state to HALF_OPEN on instance $SERVICE_NAME"; then
+        if tail -n +$LOG_START_LINE logs/recovery-engine.log | grep -q "Evicting active database connections from HikariCP Pool for $SERVICE_NAME"; then
             T_EXEC_FINISH=$(current_time_ms)
             break
         fi
@@ -146,8 +146,8 @@ for i in $(seq 1 $ITERATIONS); do
     echo -e "${CYAN}Recovery Engine Overhead - CPU: ${CPU_USAGE}%, Mem: ${MEM_USAGE}MB${NC}"
     
     # 6. Stop Fault & Traffic
-    echo "Removing fault (disabling unresponsive delay)..."
-    curl -s -X POST -H "Content-Type: application/json" -d '{"enable": false}' "http://localhost:$PORT/fault/unresponsive" > /dev/null
+    echo "Removing fault (releasing DB connections)..."
+    curl -s -X POST -H "Content-Type: application/json" -d '{"enable": false}' "http://localhost:$PORT/fault/db-exhaustion" > /dev/null
     
     echo "Stopping traffic generator..."
     kill -9 $TRAFFIC_PID 2>/dev/null || true

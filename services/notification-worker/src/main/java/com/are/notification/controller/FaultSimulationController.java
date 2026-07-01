@@ -49,14 +49,35 @@ public class FaultSimulationController {
     }
 
     @PostMapping("/memory-leak")
-    public Map<String, Object> toggleMemoryLeak(@RequestBody Map<String, Boolean> body) {
-        boolean enable = body.getOrDefault("enable", false);
+    public Map<String, Object> toggleMemoryLeak(@RequestBody Map<String, Object> body) {
+        boolean enable = false;
+        if (body.containsKey("enable")) {
+            enable = Boolean.parseBoolean(body.get("enable").toString());
+        }
+        
+        int maxMb = -1;
+        if (body.containsKey("maxMb")) {
+            maxMb = Integer.parseInt(body.get("maxMb").toString());
+        }
+        final int targetMaxMb = maxMb;
+
         simulateMemoryLeak.set(enable);
-        log.warn("FAULT_SIMULATION: Memory leak simulation set to {}", enable);
+        log.warn("FAULT_SIMULATION: Memory leak simulation set to {}, maxMb: {}", enable, maxMb);
+        
         if (enable) {
             Thread.ofVirtual().name("memory-leak-sim").start(() -> {
+                int allocatedMb = 0;
                 while (simulateMemoryLeak.get()) {
-                    leakedMemory.add(new byte[1024 * 1024]);
+                    // Gradual ramp: 1MB every 500ms (~2MB/s) to give Prometheus time to observe the trend
+                    if (targetMaxMb <= 0 || allocatedMb < targetMaxMb) {
+                        leakedMemory.add(new byte[1024 * 1024]); // 1MB retained (leaked)
+                        allocatedMb++;
+                        // Generate GC churn with temporary allocations to simulate realistic heap pressure
+                        for (int i = 0; i < 3; i++) {
+                            @SuppressWarnings("unused")
+                            byte[] garbage = new byte[256 * 1024]; // 256KB discarded immediately
+                        }
+                    }
                     try { Thread.sleep(500); } catch (InterruptedException e) {
                         Thread.currentThread().interrupt(); break;
                     }
@@ -65,7 +86,7 @@ public class FaultSimulationController {
         } else {
             leakedMemory.clear();
         }
-        return Map.of("fault", "memory-leak", "active", enable);
+        return Map.of("fault", "memory-leak", "active", enable, "maxMb", maxMb);
     }
 
     @PostMapping("/cpu-spike")
