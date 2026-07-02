@@ -55,12 +55,26 @@ public class FaultSimulationController {
     public Map<String, Object> toggleMemoryLeak(@RequestBody Map<String, Object> body) {
         boolean enable = false;
         if (body.containsKey("enable")) {
-            enable = Boolean.parseBoolean(body.get("enable").toString());
+            Object enableVal = body.get("enable");
+            if (enableVal instanceof Boolean) {
+                enable = (Boolean) enableVal;
+            } else if (enableVal != null) {
+                enable = Boolean.parseBoolean(enableVal.toString());
+            }
         }
 
         int maxMb = -1;
         if (body.containsKey("maxMb")) {
-            maxMb = Integer.parseInt(body.get("maxMb").toString());
+            Object maxMbVal = body.get("maxMb");
+            if (maxMbVal instanceof Number) {
+                maxMb = ((Number) maxMbVal).intValue();
+            } else if (maxMbVal != null) {
+                try {
+                    maxMb = (int) Double.parseDouble(maxMbVal.toString());
+                } catch (NumberFormatException e) {
+                    log.warn("Invalid maxMb value: {}", maxMbVal, e);
+                }
+            }
         }
         final int targetMaxMb = maxMb;
 
