@@ -109,7 +109,7 @@ restart_with_custom_heap() {
 
     echo -e "${YELLOW}Starting $short_name with JVM heap limit $heap_size...${NC}"
     export JVM_MAX_HEAP="$heap_size"
-    ./scripts/debug_launch.sh $short_name > /dev/null 2>&1 &
+    ./scripts/launch_engine.sh $short_name > /dev/null 2>&1 &
     wait_for_health $port
     echo -e "${GREEN}$short_name is up and running with custom heap.${NC}"
     sleep 5 # stabilization buffer
@@ -129,21 +129,28 @@ restart_with_default_heap() {
 
     echo -e "${YELLOW}Starting $short_name back with default JVM heap...${NC}"
     unset JVM_MAX_HEAP
-    ./scripts/debug_launch.sh $short_name > /dev/null 2>&1 &
+    ./scripts/launch_engine.sh $short_name > /dev/null 2>&1 &
     wait_for_health $port
     echo -e "${GREEN}$short_name has been recovered and is healthy with default heap.${NC}"
     sleep 5 # stabilization buffer
 }
 
-# Record the exact trigger time of the script execution
-TRIGGER_TIME=$(python3 -c 'from datetime import datetime; print(datetime.now().astimezone().isoformat())')
+NUM_ITERATIONS=${1:-10}
 
-echo -e "${CYAN}Starting Memory Leak Performance Test...${NC}"
-echo -e "${CYAN}Trigger Time: $TRIGGER_TIME${NC}"
+echo -e "${CYAN}Starting Memory Leak Performance Test for $NUM_ITERATIONS iterations...${NC}"
 echo -e "${CYAN}Output will be appended incrementally to $RESULTS_FILE${NC}"
 
-for idx in 0 1; do
-    SERVICE_NAME=${SERVICES[$idx]}
+for iter in $(seq 1 $NUM_ITERATIONS); do
+    echo -e "\n${CYAN}======================================================${NC}"
+    echo -e "${CYAN}Iteration $iter of $NUM_ITERATIONS${NC}"
+    echo -e "${CYAN}======================================================${NC}"
+
+    # Record the exact trigger time of the script execution
+    TRIGGER_TIME=$(python3 -c 'from datetime import datetime; print(datetime.now().astimezone().isoformat())')
+    echo -e "${CYAN}Trigger Time: $TRIGGER_TIME${NC}"
+
+    for idx in 0 1; do
+        SERVICE_NAME=${SERVICES[$idx]}
     PORT=${PORTS[$idx]}
     SHORT_NAME=${SHORTS[$idx]}
 
@@ -288,6 +295,7 @@ if not isinstance(data, list):
     data = []
 
 run_entry = {
+    "iteration": $iter,
     "trigger_time": "$TRIGGER_TIME",
     "account-service": {
         "timestamps": {
@@ -329,6 +337,13 @@ with open(results_file, "w") as f:
     json.dump(data, f, indent=2)
 EOF
 
-echo -e "${GREEN}Metrics recorded successfully!${NC}"
+    echo -e "${GREEN}Metrics recorded successfully for iteration $iter!${NC}"
+    
+    if [ $iter -lt $NUM_ITERATIONS ]; then
+        echo -e "${YELLOW}Waiting 30 seconds before starting next iteration to let system stabilize...${NC}"
+        sleep 30
+    fi
+done
+
 echo -e "\n${CYAN}======================================================${NC}"
-echo -e "${GREEN}Testing Complete. JSON Results saved to $RESULTS_FILE${NC}"
+echo -e "${GREEN}All $NUM_ITERATIONS iterations complete. JSON Results saved to $RESULTS_FILE${NC}"

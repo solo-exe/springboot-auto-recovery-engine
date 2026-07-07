@@ -13,14 +13,14 @@
 #   4. RECOVERY LAYER       — Recovery Engine
 #
 # Usage:
-#   ./scripts/debug_launch.sh              # Start everything
-#   ./scripts/debug_launch.sh infra        # Start only infrastructure
-#   ./scripts/debug_launch.sh obs          # Start only observability
-#   ./scripts/debug_launch.sh build        # Maven build only
-#   ./scripts/debug_launch.sh <service>    # Start a single Java service
+#   ./scripts/launch_engine.sh              # Start everything
+#   ./scripts/launch_engine.sh infra        # Start only infrastructure
+#   ./scripts/launch_engine.sh obs          # Start only observability
+#   ./scripts/launch_engine.sh build        # Maven build only
+#   ./scripts/launch_engine.sh <service>    # Start a single Java service
 #       service = admin | account | payment | notif | gateway | recovery
-#   ./scripts/debug_launch.sh status       # Check status of all components
-#   ./scripts/debug_launch.sh stop         # Stop everything
+#   ./scripts/launch_engine.sh status       # Check status of all components
+#   ./scripts/launch_engine.sh stop         # Stop everything
 # ============================================================
 
 set -euo pipefail
@@ -439,7 +439,7 @@ case "${1:-all}" in
         echo "  Recovery Engine:   http://localhost:8087"
         echo ""
         echo -e "${BOLD}Infrastructure:${NC}"
-        echo "  PostgreSQL:        localhost:5432"
+        echo "  PostgreSQL:        localhost:15432"
         echo "  RabbitMQ:          http://localhost:15672 (guest/guest)"
         echo "  Prometheus:        http://localhost:9090"
         echo "  Grafana:           http://localhost:3000 (admin/admin)"
@@ -447,8 +447,8 @@ case "${1:-all}" in
         echo "  Loki:              http://localhost:3100"
         echo ""
         echo -e "${BOLD}Logs:${NC} $LOG_DIR/"
-        echo -e "${BOLD}Status:${NC} ./scripts/debug_launch.sh status"
-        echo -e "${BOLD}Stop:${NC}   ./scripts/debug_launch.sh stop"
+        echo -e "${BOLD}Status:${NC} ./scripts/launch_engine.sh status"
+        echo -e "${BOLD}Stop:${NC}   ./scripts/launch_engine.sh stop"
         ;;
     *)
         echo "Usage: $0 {all|infra|obs|build|services|admin|account|payment|notif|gateway|recovery|status|stop|logs <service>}"

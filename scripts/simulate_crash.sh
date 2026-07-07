@@ -68,8 +68,8 @@ get_recovery_overhead() {
 ensure_service_running() {
     local pid_file="logs/${SERVICE_NAME}.pid"
     if [ ! -f "$pid_file" ] || ! kill -0 $(cat "$pid_file" 2>/dev/null) 2>/dev/null; then
-        echo -e "${YELLOW}$SERVICE_NAME is not running. Starting it now via debug_launch.sh...${NC}"
-        ./scripts/debug_launch.sh $SHORT_NAME > /dev/null 2>&1 &
+        echo -e "${YELLOW}$SERVICE_NAME is not running. Starting it now via launch_engine.sh...${NC}"
+        ./scripts/launch_engine.sh $SHORT_NAME > /dev/null 2>&1 &
         wait_for_health $PORT
         echo -e "${GREEN}$SERVICE_NAME is now up and running.${NC}"
         sleep 5
@@ -114,7 +114,7 @@ for i in $(seq 1 $ITERATIONS); do
     T_CRASH=$(current_time_ms)
     # Kill the actual Java process
     kill -9 "$TARGET_PID" 2>/dev/null || true
-    # Also kill the Maven wrapper so debug_launch.sh can restart cleanly
+    # Also kill the Maven wrapper so launch_engine.sh can restart cleanly
     kill -9 $(cat "$PID_FILE" 2>/dev/null) 2>/dev/null || true
     
     # 3. Wait for Detection by Recovery Engine
@@ -159,8 +159,8 @@ for i in $(seq 1 $ITERATIONS); do
     echo -e "${CYAN}Recovery Engine Overhead - CPU: ${CPU_USAGE}%, Mem: ${MEM_USAGE}MB${NC}"
     
     # 6. Close the loop: The Recovery Engine currently mocks the OS restart.
-    echo "Triggering actual OS-level restart via debug_launch.sh..."
-    ./scripts/debug_launch.sh $SHORT_NAME > /dev/null 2>&1 &
+    echo "Triggering actual OS-level restart via launch_engine.sh..."
+    ./scripts/launch_engine.sh $SHORT_NAME > /dev/null 2>&1 &
     
     # 7. Wait for Full Recovery (MTTR)
     echo "Waiting for $SERVICE_NAME to become healthy again..."

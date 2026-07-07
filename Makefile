@@ -75,8 +75,8 @@ launch:
 # Usage: make debug-launch ARGS="all"  (or: infra, obs, build, admin, account, payment, notif, gateway, recovery, status, stop)
 ARGS ?= all
 debug-launch:
-	@chmod +x scripts/debug_launch.sh
-	@./scripts/debug_launch.sh $(ARGS)
+	@chmod +x scripts/launch_engine.sh
+	@./scripts/launch_engine.sh $(ARGS)
 
 # ----------------------------------------
 # Local Microservice Run Commands 

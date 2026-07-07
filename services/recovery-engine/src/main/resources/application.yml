@@ -14,7 +14,7 @@ spring:
   liquibase:
     enabled: false
   datasource:
-    url: jdbc:postgresql://localhost:5432/are_db
+    url: jdbc:postgresql://localhost:15432/are_db
     username: are_user
     password: are_password
     hikari:
