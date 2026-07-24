@@ -6,7 +6,7 @@
 [![Observability](https://img.shields.io/badge/Observability-Prometheus%20%2F%20Loki%20%2F%20Grafana-orange.svg)](https://grafana.com/)
 [![Messaging](https://img.shields.io/badge/RabbitMQ-4.x-red.svg)](https://www.rabbitmq.com/)
 
-An advanced, event-driven, self-healing microservice ecosystem simulating a resilient financial transaction platform. The **Auto Recovery Engine (ARE)** provides built-in fault-injection capabilities to test and observe real-time automated recovery actions. It integrates a full observability stack (Prometheus, Loki, Alertmanager, and Grafana) with a closed-loop remediation handler that detects service anomalies and triggers automated healing runs.
+An event-driven, self-healing microservice ecosystem simulating a resilient financial transaction platform. The **Auto Recovery Engine (ARE)** provides built-in fault-injection capabilities to test and observe real-time automated recovery actions. It integrates a full observability stack (Prometheus, Loki, Alertmanager, and Grafana) with a closed-loop remediation handler that detects service anomalies and triggers automated healing runs.
 
 ---
 
@@ -14,9 +14,9 @@ An advanced, event-driven, self-healing microservice ecosystem simulating a resi
 
 The system implements an autonomic closed-loop feedback design (MAPE-K loop) structured across three logical layers:
 
-*   **Application Layer**: Houses the core microservices cluster (API Gateway, Account Service, Payment Service, and Notification Service) which handles transaction requests, internal communication, and notification triggers.
-*   **Observability Layer**: Aggregates live system telemetry (health checks, performance metrics, and application logs) scraped and processed by the monitoring tier.
-*   **Recovery Layer**: The **Auto-Recovery Engine** (ARE) which consumes telemetry alerts, evaluates them against the decision matrix, and dispatches automated remediation actions (such as service restarts) back to the application layer.
+-   **Application Layer**: Houses the core microservices cluster (API Gateway, Account Service, Payment Service, and Notification Service) which handles transaction requests, internal communication, and notification triggers.
+-   **Observability Layer**: Aggregates live system telemetry (health checks, performance metrics, and application logs) scraped and processed by the monitoring tier.
+-   **Recovery Layer**: The **Auto-Recovery Engine** (ARE) which consumes telemetry alerts, evaluates them against the decision matrix, and dispatches automated remediation actions (such as service restarts) back to the application layer.
 
 <p align="center">
   <img src="are_arch.png" alt="Auto-Recovery Engine (ARE) Architecture" width="700">
@@ -50,10 +50,13 @@ auto-recovery-engine-pgd/
 │   └── recovery-engine/             # Alert receiver, cooling rules, and execution handler
 │
 └── scripts/                         # Testing & experiment orchestration
-    ├── launch_system.sh             # Master script to build & run all tiers
-    ├── test-observability.sh        # Seeds auth flow, generates metrics, tests restart
-    ├── simulate_load.py             # Generates live user traffic / database writes
-    └── run_experiments.py           # Injects faults, records recovery MTTR, plots graph
+    ├── launch_engine.sh             # Debug launch entrypoint for infra / observability / services
+    ├── run.sh                       # Background launcher wrapper used by the project workflow
+    ├── test-observability.sh        # Seeds auth flow, generates metrics, tests restart behavior
+    ├── simulate_crash.sh            # Crash recovery latency and MTTR benchmark
+    ├── simulate_error_rate.sh       # High error-rate detection and circuit-breaker benchmark
+    ├── simulate_latency.sh          # High latency detection and circuit-breaker benchmark
+    └── simulate_memory_leak.sh      # Memory-leak detection and restart benchmark
 ```
 
 ---
@@ -64,11 +67,11 @@ The ecosystem uses a **Shared Database Pattern** for simplicity. Services connec
 
 Below is the relationship ERD (represented in DBML notation):
 
-*   **`users`**: Master customer logins and profiles.
-*   **`accounts`**: Financial ledger accounts (optimistic locking enabled via a `@Version` field to prevent race conditions).
-*   **`transactions`**: Immutable transaction audit logs linked directly to an account.
-*   **`payments`**: Decoupled transfers managed by the Payment Service, using logical account references instead of physical DB foreign keys to maintain modular boundaries.
-*   **`otps`**: Temporary security codes used during onboarding registration steps.
+-   **`users`**: Master customer logins and profiles.
+-   **`accounts`**: Financial ledger accounts (optimistic locking enabled via a `@Version` field to prevent race conditions).
+-   **`transactions`**: Immutable transaction audit logs linked directly to an account.
+-   **`payments`**: Decoupled transfers managed by the Payment Service, using logical account references instead of physical DB foreign keys to maintain modular boundaries.
+-   **`otps`**: Temporary security codes used during onboarding registration steps.
 
 ```
 ┌──────────────┐          ┌──────────────┐          ┌─────────────────┐
@@ -109,14 +112,14 @@ Below is the relationship ERD (represented in DBML notation):
 
 ## 🛠️ Microservice Breakdown
 
-| Service | Port | Primary Responsibilities | Core Stack Components |
-|---|---|---|---|
-| **API Gateway** | `8080` | JWT validation, client routing, correlation ID injection | WebFlux, Spring Cloud Gateway, JJWT |
-| **Account Service** | `8082` | Signups, OTPs, balance ledgers, transaction histories | WebMVC, JPA, HikariCP, PostgreSQL, RabbitMQ |
-| **Payment Service** | `8081` | Safe debits, credits, refunds, and inter-service client logic | WebMVC, WebClient, Resilience4j Circuit Breaker |
-| **Notification Worker** | `8085` | Consuming MQ notification jobs, rendering HTML emails | RabbitMQ AMQP, JavaMailSender, Thymeleaf |
-| **Spring Boot Admin** | `8086` | Health registration, dynamic metrics UI, thread states | Spring Boot Admin Server |
-| **Recovery Engine** | `8087` | Alert webhook receiver, cooldown manager, action executor | Spring Boot, Webhook Parser, Audit Logging |
+| Service                 | Port   | Primary Responsibilities                                      | Core Stack Components                           |
+| ----------------------- | ------ | ------------------------------------------------------------- | ----------------------------------------------- |
+| **API Gateway**         | `8080` | JWT validation, client routing, correlation ID injection      | WebFlux, Spring Cloud Gateway, JJWT             |
+| **Account Service**     | `8082` | Signups, OTPs, balance ledgers, transaction histories         | WebMVC, JPA, HikariCP, PostgreSQL, RabbitMQ     |
+| **Payment Service**     | `8081` | Safe debits, credits, refunds, and inter-service client logic | WebMVC, WebClient, Resilience4j Circuit Breaker |
+| **Notification Worker** | `8085` | Consuming MQ notification jobs, rendering HTML emails         | RabbitMQ AMQP, JavaMailSender, Thymeleaf        |
+| **Spring Boot Admin**   | `8086` | Health registration, dynamic metrics UI, thread states        | Spring Boot Admin Server                        |
+| **Recovery Engine**     | `8087` | Alert webhook receiver, cooldown manager, action executor     | Spring Boot, Webhook Parser, Audit Logging      |
 
 ---
 
@@ -126,13 +129,13 @@ Each business service mounts a `FaultSimulationController` that is intercepted b
 
 ### Fault Endpoints
 
-| Endpoint (POST) | JSON Payload | Simulated Behavior |
-|---|---|---|
-| `/fault/{service}/unresponsive` | `{"enable": true}` | Intercepts business requests and sleeps for 60s (induces Gateway/Client timeouts). |
-| `/fault/{service}/error-rate` | `{"rate": 50}` | Randomly drops `rate`% of inbound business requests, returning an HTTP 500 error wrapper. |
-| `/fault/{service}/memory-leak` | `{"enable": true}` | Launches a virtual thread allocating `1MB` byte arrays every 500ms (OOM testing). |
-| `/fault/{service}/cpu-spike` | `{"enable": true}` | Spawns background virtual threads running busy loops on all available cores. |
-| `/fault/{service}/crash` | *None* | Invokes a JVM shutdown (`System.exit(1)`). |
+| Endpoint (POST)                 | JSON Payload       | Simulated Behavior                                                                        |
+| ------------------------------- | ------------------ | ----------------------------------------------------------------------------------------- |
+| `/fault/{service}/unresponsive` | `{"enable": true}` | Intercepts business requests and sleeps for 60s (induces Gateway/Client timeouts).        |
+| `/fault/{service}/error-rate`   | `{"rate": 50}`     | Randomly drops `rate`% of inbound business requests, returning an HTTP 500 error wrapper. |
+| `/fault/{service}/memory-leak`  | `{"enable": true}` | Launches a virtual thread allocating `1MB` byte arrays every 500ms (OOM testing).         |
+| `/fault/{service}/cpu-spike`    | `{"enable": true}` | Spawns background virtual threads running busy loops on all available cores.              |
+| `/fault/{service}/crash`        | _None_             | Invokes a JVM shutdown (`System.exit(1)`).                                                |
 
 > [!NOTE]
 > Paths matching `/fault/**`, `/actuator/**`, `/internal/**`, `/swagger-ui/**`, and `/v3/api-docs/**` bypass the fault interceptor so that infrastructure control planes remain operational during outages.
@@ -146,33 +149,33 @@ The **Recovery Engine** parses Alertmanager webhook payloads, checks the target 
 ```yaml
 # Matrix Rule Mapping inside recovery-engine application.yml
 recovery:
-  matrix:
-    - fault: Service Crash
-      signal: HTTP 5xx rate spike (ServiceDown alert)
-      primary-action: RESTART
-      threshold: 1
-      window: 30s
-    - fault: High Error Rate
-      signal: HTTP 5xx rate > 10% (HighErrorRate alert)
-      primary-action: CIRCUIT_BREAKER_OPEN
-      secondary-action: REROUTE_TRAFFIC
-      threshold: 0.1
-      window: 120s
-    - fault: Response Time Degradation
-      signal: p95 latency > 2s (HighLatency alert)
-      primary-action: CIRCUIT_BREAKER_HALF_OPEN
-      threshold: 2000
-      window: 180s
-    - fault: Connection Pool Exhaustion
-      signal: HikariCP pending threads (DbConnectionTimeout alert)
-      primary-action: POOL_RESET
-      threshold: 5
-      window: 60s
-    - fault: Cascading Failure
-      signal: Multi-service alarms firing
-      primary-action: CASCADING_RECOVERY
-      threshold: 2
-      window: 60s
+    matrix:
+        - fault: Service Crash
+          signal: HTTP 5xx rate spike (ServiceDown alert)
+          primary-action: RESTART
+          threshold: 1
+          window: 30s
+        - fault: High Error Rate
+          signal: HTTP 5xx rate > 10% (HighErrorRate alert)
+          primary-action: CIRCUIT_BREAKER_OPEN
+          secondary-action: REROUTE_TRAFFIC
+          threshold: 0.1
+          window: 120s
+        - fault: Response Time Degradation
+          signal: p95 latency > 2s (HighLatency alert)
+          primary-action: CIRCUIT_BREAKER_HALF_OPEN
+          threshold: 2000
+          window: 180s
+        - fault: Connection Pool Exhaustion
+          signal: HikariCP pending threads (DbConnectionTimeout alert)
+          primary-action: POOL_RESET
+          threshold: 5
+          window: 60s
+        - fault: Cascading Failure
+          signal: Multi-service alarms firing
+          primary-action: CASCADING_RECOVERY
+          threshold: 2
+          window: 60s
 ```
 
 ---
@@ -180,31 +183,52 @@ recovery:
 ## 🚀 Quick Start Guide
 
 ### Prerequisites
-*   Docker & Docker Compose (v2+)
-*   Java Development Kit (JDK 21+)
-*   Maven 3.8+ (or use the provided `./mvnw` wrapper)
+
+-   Docker & Docker Compose (v2+)
+-   Java Development Kit (JDK 21+)
+-   Maven 3.8+ (or use the provided `./mvnw` wrapper)
 
 ### Step 1: Clone the Repo and Build Binary Jars
+
 Compile all microservices and package them into target jars:
+
 ```bash
 make build
 ```
 
 ### Step 2: Start the System
-You can start all infrastructure, observability stacks, and microservice containers using the launch utility:
+
+The current preferred launch path is the debug launcher that starts infrastructure, observability, and Java services in a controlled sequential order with full log visibility:
+
 ```bash
-make launch
-# This runs docker-compose for DB, MQ, and Observability,
-# and starts the Spring Boot services in new terminal windows.
+make debug-launch
+# or directly:
+./scripts/launch_engine.sh
+```
+
+The launcher supports tiered startup and targeted service control:
+
+```bash
+./scripts/launch_engine.sh infra
+./scripts/launch_engine.sh obs
+./scripts/launch_engine.sh admin
+./scripts/launch_engine.sh account
+./scripts/launch_engine.sh payment
+./scripts/launch_engine.sh notif
+./scripts/launch_engine.sh gateway
+./scripts/launch_engine.sh recovery
+./scripts/launch_engine.sh status
+./scripts/launch_engine.sh stop
 ```
 
 If you prefer to start individual components manually:
-*   Start infrastructure only: `make infra-compose-up`
-*   Start the gateway locally: `make start-gateway`
-*   Start the account service locally: `make start-account`
-*   Start the payment service locally: `make start-payment`
-*   Start the notification worker: `make start-notif`
-*   Start the recovery engine: `make start-recovery`
+
+-   Start infrastructure only: `make infra-compose-up`
+-   Start the gateway locally: `make start-gateway`
+-   Start the account service locally: `make start-account`
+-   Start the payment service locally: `make start-payment`
+-   Start the notification worker: `make start-notif`
+-   Start the recovery engine: `make start-recovery`
 
 ---
 
@@ -212,31 +236,40 @@ If you prefer to start individual components manually:
 
 The repository contains scripts under `scripts/` to automate load testing and measure self-healing recovery times.
 
-### 1. Master Test Orchestration
-To perform a complete integration run that verifies database connectivity, triggers background traffic, injects a container crash, and measures the recovery loop:
-```bash
-chmod +x scripts/run_all_tests.sh
-./scripts/run_all_tests.sh
-```
+### 1. Auto-Seeding & Observability Verification (`scripts/test-observability.sh`)
 
-### 2. Auto-Seeding & Observability Verification (`scripts/test-observability.sh`)
 This script checks infrastructure health, hooks into the API Gateway auth flow, and:
+
 1.  **Registers a User** via `POST /api/accounts/auth/signup`
 2.  **Verifies OTP** using the development master code `123456`
 3.  **Sets a password** using `POST /api/accounts/auth/create-password` to activate the user account
 4.  **Generates HTTP 4xx/5xx logs** to populate Loki and Prometheus
-5.  **Crashes the account service** to confirm the recovery engine's automated restart hook.
+5.  **Triggers a service failure path** to verify that the recovery loop is engaged.
 
-### 3. Background Load Simulation (`scripts/simulate_load.py`)
-Spawns active clients making transactions in the background to mimic standard production traffic:
+### 2. Controlled Fault Simulation Benchmarks
+
+The project now ships dedicated shell-based performance experiments for the live recovery workflow. Each script measures detection latency, execution latency, and end-to-end MTTR, then writes JSON outputs into `logs/`.
+
+-   `scripts/simulate_crash.sh` — service kill / restart benchmark
+-   `scripts/simulate_error_rate.sh` — high error-rate detection and circuit-breaker benchmark
+-   `scripts/simulate_latency.sh` — response-time degradation benchmark
+-   `scripts/simulate_memory_leak.sh` — memory-pressure detection and restart benchmark
+
+Typical usage:
+
 ```bash
-python scripts/simulate_load.py
+./scripts/simulate_crash.sh
+./scripts/simulate_error_rate.sh
+./scripts/simulate_latency.sh
+./scripts/simulate_memory_leak.sh
 ```
 
-### 4. Resilience Experiments & MTTR Plots (`scripts/run_experiments.py`)
-Injects structured faults (Service Crash, High Error Rate, Latency Spike, CPU Spike, Memory Leak) and polls the Recovery Engine logs to determine the exact **Mean Time to Recovery (MTTR)**.
-*   Results are written to `phase4_results.json`.
-*   A comparative performance chart is generated and saved as `phase4_mttr_results.png`.
+The resulting artifacts live in:
+
+-   `logs/crash_scenario_results.json`
+-   `logs/error_rate_results.json`
+-   `logs/latency_results.json`
+-   `logs/memory_leak_results.json`
 
 ---
 
@@ -244,13 +277,13 @@ Injects structured faults (Service Crash, High Error Rate, Latency Spike, CPU Sp
 
 During runtime, you can inspect the health and telemetry details of all microservices:
 
-*   **API Gateway entrypoint**: [http://localhost:8080](http://localhost:8080)
-*   **Spring Boot Admin console**: [http://localhost:8086](http://localhost:8086) (view service nodes and trigger thread dumps)
-*   **Prometheus metrics console**: [http://localhost:9090](http://localhost:9090)
-*   **Grafana dashboards**: [http://localhost:3000](http://localhost:3000) (Default login: `admin / admin`)
-    *   *Path: Dashboards -> ARE - Microservices Overview*
-*   **Alertmanager console**: [http://localhost:9093](http://localhost:9093)
-*   **RabbitMQ administration UI**: [http://localhost:15672](http://localhost:15672) (Default login: `guest / guest`)
+-   **API Gateway entrypoint**: [http://localhost:8080](http://localhost:8080)
+-   **Spring Boot Admin console**: [http://localhost:8086](http://localhost:8086) (view service nodes and trigger thread dumps)
+-   **Prometheus metrics console**: [http://localhost:9090](http://localhost:9090)
+-   **Grafana dashboards**: [http://localhost:3000](http://localhost:3000) (Default login: `admin / admin`)
+    -   _Path: Dashboards -> ARE - Microservices Overview_
+-   **Alertmanager console**: [http://localhost:9093](http://localhost:9093)
+-   **RabbitMQ administration UI**: [http://localhost:15672](http://localhost:15672) (Default login: `guest / guest`)
 
 ---
 

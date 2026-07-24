@@ -21,8 +21,8 @@ public class FallbackController {
 
     @GetMapping("/fallback")
     public Mono<Void> fallback(ServerWebExchange exchange) {
-        log.warn("CIRCUIT BREAKER TRIGGERED: Executing API Gateway fallback for path {}", 
-                 exchange.getRequest().getPath());
+        log.warn("CIRCUIT BREAKER TRIGGERED: Executing API Gateway fallback for path {}",
+                exchange.getRequest().getPath());
         exchange.getResponse().setStatusCode(HttpStatus.SERVICE_UNAVAILABLE);
         exchange.getResponse().getHeaders().setContentType(MediaType.APPLICATION_JSON);
         String body = "{\"success\":false,\"data\":null,\"message\":\"Service temporarily unavailable\"}";
